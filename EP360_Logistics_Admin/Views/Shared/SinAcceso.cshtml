@@ -1,0 +1,13 @@
+@{
+    ViewBag.Title = "Sin acceso";
+}
+
+<section class="tarjeta">
+    <div class="tarjeta-encabezado">
+        <span class="icono-material" aria-hidden="true">lock</span>
+        <h2>Sin acceso</h2>
+        <span class="insignia insignia-error">403</span>
+    </div>
+    <p>Tu cuenta (<strong>@User.Identity.Name</strong>) no pertenece al grupo de administradores del directorio global.</p>
+    <p>Si necesitas acceso, solicítalo al departamento de Sistemas.</p>
+</section>

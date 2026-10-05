@@ -1,0 +1,57 @@
+@model EP360_Logistics_Admin.Models.EstadoBaseModel
+@{
+    ViewBag.Title = "Inicio";
+}
+
+<h1 class="titulo-pagina">Directorio global</h1>
+<p class="subtitulo-pagina">Administración de personas, cuentas y grupos compartidos por los portales.</p>
+
+<div class="rejilla-accesos">
+    <a class="acceso" href="@Url.Action("Index", "Personas")"><span class="icono-material" aria-hidden="true">group</span><strong>Personas</strong><span>Usuarios de AD, externos y contactos</span></a>
+    <a class="acceso" href="@Url.Action("Index", "Cuentas")"><span class="icono-material" aria-hidden="true">apartment</span><strong>Cuentas</strong><span>Cuentas de clientes y sus contactos</span></a>
+    <a class="acceso" href="@Url.Action("Index", "Grupos")"><span class="icono-material" aria-hidden="true">workspaces</span><strong>Grupos</strong><span>Grupos de cuentas por cliente</span></a>
+</div>
+
+@if (Model.Conectado)
+{
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">database</span>
+            <h2>Base de datos conectada</h2>
+            <span class="insignia insignia-ok">En línea</span>
+        </div>
+        <dl class="datos">
+            <div><dt>Base</dt><dd>@Model.BaseDatos</dd></div>
+            <div><dt>Servidor</dt><dd>@Model.Servidor</dd></div>
+            <div><dt>Edición</dt><dd>@Model.Edicion</dd></div>
+            <div><dt>Hora del servidor</dt><dd>@Model.FechaServidor.ToString("yyyy-MM-dd HH:mm:ss")</dd></div>
+            <div><dt>Tablas en dir / seg / sync</dt><dd>@Model.TablasDir / @Model.TablasSeg / @Model.TablasSync</dd></div>
+        </dl>
+    </section>
+
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">apps</span>
+            <h2>Portales registrados (@Model.PortalesActivos)</h2>
+        </div>
+        <ul class="lista-portales">
+            @foreach (var portal in Model.Portales)
+            {
+                <li><strong>@portal.Clave</strong><span>@portal.Nombre</span></li>
+            }
+        </ul>
+    </section>
+}
+else
+{
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">error</span>
+            <h2>No se pudo leer la base global</h2>
+            <span class="insignia insignia-error">Sin conexión</span>
+        </div>
+        <p>Verifica que se haya corrido <code>Database/01_CrearBaseYEsquemas.sql</code> en el servidor 60 y que
+        la cuenta de la aplicación tenga permiso de ejecución sobre <code>dir.sp_ObtenerEstadoBase</code>.</p>
+        <pre class="detalle-error">@Model.Error</pre>
+    </section>
+}

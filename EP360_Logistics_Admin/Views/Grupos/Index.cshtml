@@ -1,0 +1,56 @@
+@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.GrupoCuentaModel>
+@{
+    ViewBag.Title = "Grupos de cuentas";
+    bool inactivos = ViewBag.Inactivos;
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1 class="titulo-pagina">Grupos de cuentas</h1>
+        <p class="subtitulo-pagina">Un grupo reúne varias cuentas de un mismo cliente. Quien pertenece a una cuenta del grupo ve todas.</p>
+    </div>
+    <a class="boton boton-primario" href="@Url.Action("Crear")"><span class="icono-material" aria-hidden="true">add</span> Nuevo grupo</a>
+</div>
+
+<div class="barra-herramientas">
+    @if (inactivos)
+    {
+        <a href="@Url.Action("Index")">Ocultar inactivos</a>
+    }
+    else
+    {
+        <a href="@Url.Action("Index", new { inactivos = true })">Mostrar también inactivos</a>
+    }
+    <span class="contador">@Model.Count grupos</span>
+</div>
+
+<section class="tarjeta tarjeta-tabla">
+    <table class="tabla">
+        <thead>
+            <tr><th>Folio</th><th>Nombre</th><th class="num">Cuentas</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var g in Model)
+            {
+                <tr class="@(g.Activo ? "" : "fila-inactiva")">
+                    <td>@g.Folio</td>
+                    <td><a href="@Url.Action("Index", "Cuentas", new { idGrupoCuenta = g.IdGrupoCuenta })">@g.Nombre</a></td>
+                    <td class="num">@g.TotalCuentas</td>
+                    <td>@(g.Activo ? "Activo" : "Inactivo")</td>
+                    <td class="acciones">
+                        <a class="boton boton-chico" href="@Url.Action("Editar", new { id = g.IdGrupoCuenta })">Editar</a>
+                        @using (Html.BeginForm(g.Activo ? "Desactivar" : "Reactivar", "Grupos", new { id = g.IdGrupoCuenta }, FormMethod.Post, new { @class = "en-linea" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="boton boton-chico @(g.Activo ? "boton-peligro" : "")">@(g.Activo ? "Desactivar" : "Reactivar")</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="5" class="vacio">No hay grupos.</td></tr>
+            }
+        </tbody>
+    </table>
+</section>

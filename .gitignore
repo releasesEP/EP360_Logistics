@@ -1,0 +1,20 @@
+# El portal EP360 es otro repositorio (releasesEP/EP360, rama bd-global): no se versiona aqui.
+/EP360/
+
+# Secretos y configuracion local
+ConnectionStrings.config
+AppSettings.config
+*.user
+
+# Compilacion y herramientas
+bin/
+obj/
+.vs/
+packages/
+
+# Respaldos de bases de datos (contienen hashes de contrasenas)
+*.bak
+*.trn
+
+# Salida de aspnet_compiler (comprobacion de vistas)
+_program files_git_check/

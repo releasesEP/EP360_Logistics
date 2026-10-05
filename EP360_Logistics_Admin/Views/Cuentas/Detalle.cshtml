@@ -1,0 +1,82 @@
+@model EP360_Logistics_Admin.Models.CuentaModel
+@using EP360_Logistics_Admin.Models
+@{
+    ViewBag.Title = Model.NombreComercial;
+    var personas = (System.Collections.Generic.List<PersonaCuentaModel>)ViewBag.Personas;
+    var vinculables = (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Vinculables;
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1 class="titulo-pagina">@Model.NombreComercial @if (!Model.Activo) { <span class="insignia insignia-error">Inactiva</span> }</h1>
+        <p class="subtitulo-pagina">Folio @Model.Folio</p>
+    </div>
+    <div class="acciones">
+        <a class="boton" href="@Url.Action("Index")">Volver</a>
+        <a class="boton" href="@Url.Action("Editar", new { id = Model.IdCuenta })">Editar</a>
+        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Cuentas", new { id = Model.IdCuenta }, FormMethod.Post, new { @class = "en-linea" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="boton @(Model.Activo ? "boton-peligro" : "boton-primario")">@(Model.Activo ? "Desactivar" : "Reactivar")</button>
+        }
+    </div>
+</div>
+
+<section class="tarjeta">
+    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">apartment</span><h2>Datos de la cuenta</h2></div>
+    <dl class="datos">
+        <div><dt>Código</dt><dd>@(Model.CodigoCuenta ?? "—")</dd></div>
+        <div><dt>Razón social</dt><dd>@(Model.RazonSocial ?? "—")</dd></div>
+        <div><dt>RFC</dt><dd>@(Model.Rfc ?? "—")</dd></div>
+        <div><dt>Grupo</dt><dd>@(Model.GrupoCuenta ?? "—")</dd></div>
+        <div><dt>Ciudad</dt><dd>@(Model.Ciudad != null ? Model.Ciudad + " (" + Model.Pais + ")" : "—")</dd></div>
+        <div><dt>Sucursal</dt><dd>@(Model.Sucursal ?? "—")</dd></div>
+    </dl>
+</section>
+
+<section class="tarjeta">
+    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">contacts</span><h2>Contactos de la cuenta (@personas.Count)</h2></div>
+    <table class="tabla">
+        <thead><tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Categoría</th><th>Puesto</th><th>Tipo</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var p in personas)
+            {
+                <tr>
+                    <td><a href="@Url.Action("Detalle", "Personas", new { id = p.IdPersona })">@p.NombrePersona</a></td>
+                    <td>@p.Correo</td>
+                    <td>@p.Telefono</td>
+                    <td>@p.Categoria</td>
+                    <td>@p.PuestoEnCuenta</td>
+                    <td>@p.TipoPersona</td>
+                    <td class="acciones">
+                        @using (Html.BeginForm("DesvincularPersona", "Cuentas", FormMethod.Post, new { @class = "en-linea" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
+                            <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                            <button type="submit" class="boton boton-chico">Quitar</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (personas.Count == 0)
+            {
+                <tr><td colspan="7" class="vacio">Esta cuenta no tiene contactos.</td></tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Activo)
+    {
+        using (Html.BeginForm("VincularPersona", "Cuentas", FormMethod.Post, new { @class = "formulario-linea" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
+            @Html.DropDownList("idPersona", vinculables, "Elige una persona…", new { @class = "control" })
+            <input type="text" name="categoria" class="control" placeholder="Categoría (ej. Ventas)" maxlength="30" />
+            <input type="text" name="puestoEnCuenta" class="control" placeholder="Puesto en la cuenta" maxlength="120" />
+            <button type="submit" class="boton boton-primario">Vincular</button>
+        }
+        <p class="nota">¿No está en la lista? <a href="@Url.Action("Crear", "Personas")">Crea la persona</a> y vincúlala aquí.</p>
+    }
+</section>

@@ -1,0 +1,54 @@
+@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.PersonaModel>
+@{
+    ViewBag.Title = "Personas";
+    bool inactivos = ViewBag.Inactivos;
+    string tipo = ViewBag.Tipo;
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1 class="titulo-pagina">Personas</h1>
+        <p class="subtitulo-pagina">Usuarios de AD, usuarios externos y contactos. Los usuarios de AD se sincronizan; aquí se dan de alta contactos y externos.</p>
+    </div>
+    <a class="boton boton-primario" href="@Url.Action("Crear")"><span class="icono-material" aria-hidden="true">add</span> Nueva persona</a>
+</div>
+
+@using (Html.BeginForm("Index", "Personas", FormMethod.Get, new { @class = "barra-filtros" }))
+{
+    <input type="text" name="buscar" value="@ViewBag.Buscar" class="control" placeholder="Buscar por nombre, correo o usuario" />
+    <select name="tipo" class="control">
+        <option value="">Todos los tipos</option>
+        <option value="AD" @(tipo == "AD" ? "selected" : "")>Usuarios de AD</option>
+        <option value="Externo" @(tipo == "Externo" ? "selected" : "")>Usuarios externos</option>
+        <option value="Contacto" @(tipo == "Contacto" ? "selected" : "")>Contactos</option>
+    </select>
+    <label class="check"><input type="checkbox" name="inactivos" value="true" @(inactivos ? "checked" : "") /> Incluir inactivas</label>
+    <button type="submit" class="boton">Filtrar</button>
+    <span class="contador">@Model.Count personas (máx. 500)</span>
+}
+
+<section class="tarjeta tarjeta-tabla">
+    <table class="tabla">
+        <thead>
+            <tr><th>Nombre</th><th>Tipo</th><th>Correo</th><th>Usuario AD</th><th>Departamento</th><th>Sucursal</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr class="@(p.Activo ? "" : "fila-inactiva")">
+                    <td><a href="@Url.Action("Detalle", new { id = p.IdPersona })">@p.NombreCompleto</a></td>
+                    <td>@p.TipoPersona</td>
+                    <td>@p.Correo</td>
+                    <td>@p.SamAccountName</td>
+                    <td>@p.Departamento</td>
+                    <td>@p.Sucursal</td>
+                    <td>@(p.Activo ? "Activa" : "Inactiva")</td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="7" class="vacio">No hay personas con esos filtros.</td></tr>
+            }
+        </tbody>
+    </table>
+</section>

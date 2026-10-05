@@ -1,0 +1,28 @@
+@model EP360_Logistics_Admin.Models.GrupoCuentaModel
+@{
+    bool esNuevo = Model.IdGrupoCuenta == 0;
+    ViewBag.Title = esNuevo ? "Nuevo grupo" : "Editar grupo";
+}
+
+<h1 class="titulo-pagina">@ViewBag.Title</h1>
+<p class="subtitulo-pagina">@(esNuevo ? "El folio se genera automáticamente." : "Folio " + Model.Folio)</p>
+
+<section class="tarjeta">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdGrupoCuenta)
+        @Html.ValidationSummary(true, null, new { @class = "error-formulario" })
+
+        <div class="campo">
+            @Html.LabelFor(m => m.Nombre)
+            @Html.TextBoxFor(m => m.Nombre, new { @class = "control", autofocus = "autofocus" })
+            @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+        </div>
+
+        <div class="acciones-formulario">
+            <button type="submit" class="boton boton-primario">Guardar</button>
+            <a class="boton" href="@Url.Action("Index")">Cancelar</a>
+        </div>
+    }
+</section>

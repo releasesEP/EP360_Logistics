@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appSettings>
+  <!-- Active Directory. Cada valor se puede sobreescribir con una variable de entorno de MAQUINA del mismo nombre. -->
+  <!-- AD_Servidor vacio = dominio de la cuenta que ejecuta la app. -->
+  <add key="AD_Servidor" value="" />
+  <!-- Opcionales: vacios = identidad del pool de IIS. -->
+  <add key="AD_Usuario" value="" />
+  <add key="AD_Password" value="" />
+  <!-- Grupo de AD que administra el directorio global. -->
+  <add key="AD_GrupoAdmins" value="ep360admins" />
+
+  <!-- Correo (invitaciones a usuarios externos; aun no se usa). Mismo buzon y mismas llaves que EP360.
+       La contrasena NO va aqui ni en el repo: en el servidor se toma de la variable de entorno de
+       MAQUINA EMAIL_SMTP_PASSWORD (ya existe para EP360). Igual para EMAIL_SMTP_SERVIDOR/PUERTO/USUARIO. -->
+  <add key="EmailSmtpServidor" value="smtp.office365.com" />
+  <add key="EmailSmtpPuerto" value="587" />
+  <add key="EmailSmtpUsuario" value="noreplyep@eplogistics.com" />
+  <add key="EmailSmtpPassword" value="" />
+</appSettings>

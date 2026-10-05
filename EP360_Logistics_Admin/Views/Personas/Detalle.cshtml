@@ -1,0 +1,136 @@
+@model EP360_Logistics_Admin.Models.PersonaModel
+@using EP360_Logistics_Admin.Models
+@{
+    ViewBag.Title = Model.NombreCompleto;
+    var cuentas = (System.Collections.Generic.List<PersonaCuentaModel>)ViewBag.Cuentas;
+    var vinculables = (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.CuentasVinculables;
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1 class="titulo-pagina">@Model.NombreCompleto @if (!Model.Activo) { <span class="insignia insignia-error">Inactiva</span> }</h1>
+        <p class="subtitulo-pagina">@Model.TipoPersona</p>
+    </div>
+    <div class="acciones">
+        <a class="boton" href="@Url.Action("Index")">Volver</a>
+        <a class="boton" href="@Url.Action("Editar", new { id = Model.IdPersona })">Editar</a>
+        @if (!Model.EsAD)
+        {
+            using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Personas", new { id = Model.IdPersona }, FormMethod.Post, new { @class = "en-linea" }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="boton @(Model.Activo ? "boton-peligro" : "boton-primario")">@(Model.Activo ? "Desactivar" : "Reactivar")</button>
+            }
+        }
+    </div>
+</div>
+
+<section class="tarjeta">
+    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">person</span><h2>Datos</h2></div>
+    <dl class="datos">
+        <div><dt>Correo</dt><dd>@(Model.Correo ?? "—")</dd></div>
+        <div><dt>Teléfono</dt><dd>@(Model.Telefono ?? "—")</dd></div>
+        <div><dt>Extensión</dt><dd>@(Model.Extension ?? "—")</dd></div>
+        <div><dt>Puesto</dt><dd>@(Model.Puesto ?? "—")</dd></div>
+        <div><dt>Departamento</dt><dd>@(Model.Departamento ?? "—")</dd></div>
+        <div><dt>Sucursal</dt><dd>@(Model.Sucursal ?? "—")</dd></div>
+        @if (Model.EsAD)
+        {
+            <div><dt>Usuario AD</dt><dd>@Model.SamAccountName</dd></div>
+            <div><dt>UPN</dt><dd>@(Model.UserPrincipalName ?? "—")</dd></div>
+            <div><dt>Habilitado en AD</dt><dd>@(Model.HabilitadoAD == true ? "Sí" : "No")</dd></div>
+            <div><dt>Última sincronización</dt><dd>@(Model.FechaUltimaSincronizacion.HasValue ? Model.FechaUltimaSincronizacion.Value.ToString("yyyy-MM-dd HH:mm") : "—")</dd></div>
+        }
+    </dl>
+    @if (Model.EsAD)
+    {
+        <p class="nota">Los usuarios de AD se activan y desactivan según su cuenta en Active Directory.</p>
+    }
+</section>
+
+@if (!Model.EsAD && Model.Activo)
+{
+    var credencial = ViewBag.Credencial as CredencialEstadoModel;
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">key</span>
+            <h2>Acceso como usuario externo</h2>
+            @if (credencial == null)
+            {
+                <span class="insignia">Sin acceso</span>
+            }
+            else
+            {
+                <span class="insignia @(credencial.Estado == "Activo" ? "insignia-ok" : "insignia-error")">@credencial.Estado</span>
+            }
+        </div>
+        @if (credencial != null && credencial.FechaCambioPassword.HasValue)
+        {
+            <p class="nota" style="margin:0 0 8px;">Contraseña cambiada el @credencial.FechaCambioPassword.Value.ToString("yyyy-MM-dd HH:mm").</p>
+        }
+        @if (string.IsNullOrEmpty(Model.Correo))
+        {
+            <p class="nota">Para darle acceso, primero captura su correo (edita a la persona): el correo es su usuario.</p>
+        }
+        else
+        {
+            <p class="nota" style="margin:0 0 8px;">
+                Entra con su correo (<strong>@Model.Correo</strong>) y esta contraseña.
+                @(Model.TipoPersona == "Contacto" ? "Al fijar la contraseña pasa de contacto a usuario externo." : "")
+                Luego cada portal (EP360, Balance…) decide con qué rol lo deja entrar.
+            </p>
+            using (Html.BeginForm("FijarPassword", "Personas", FormMethod.Post, new { @class = "formulario-linea" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idPersona" value="@Model.IdPersona" />
+                <input type="password" name="password" class="control" placeholder="Contraseña (mín. 10 caracteres)" autocomplete="new-password" required minlength="10" />
+                <input type="password" name="confirmar" class="control" placeholder="Confirmar contraseña" autocomplete="new-password" required minlength="10" />
+                <button type="submit" class="boton boton-primario">@(credencial == null ? "Dar acceso" : "Restablecer contraseña")</button>
+            }
+        }
+    </section>
+}
+
+<section class="tarjeta">
+    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">apartment</span><h2>Cuentas (@cuentas.Count)</h2></div>
+    <table class="tabla">
+        <thead><tr><th>Cuenta</th><th>Grupo</th><th>Categoría</th><th>Puesto en la cuenta</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var c in cuentas)
+            {
+                <tr>
+                    <td><a href="@Url.Action("Detalle", "Cuentas", new { id = c.IdCuenta })">@c.Cuenta</a></td>
+                    <td>@c.GrupoCuenta</td>
+                    <td>@c.Categoria</td>
+                    <td>@c.PuestoEnCuenta</td>
+                    <td class="acciones">
+                        @using (Html.BeginForm("DesvincularCuenta", "Personas", FormMethod.Post, new { @class = "en-linea" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idPersona" value="@Model.IdPersona" />
+                            <input type="hidden" name="idCuenta" value="@c.IdCuenta" />
+                            <button type="submit" class="boton boton-chico">Quitar</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (cuentas.Count == 0)
+            {
+                <tr><td colspan="5" class="vacio">Esta persona no está vinculada a ninguna cuenta.</td></tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Model.Activo)
+    {
+        using (Html.BeginForm("VincularCuenta", "Personas", FormMethod.Post, new { @class = "formulario-linea" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="idPersona" value="@Model.IdPersona" />
+            @Html.DropDownList("idCuenta", vinculables, "Elige una cuenta…", new { @class = "control" })
+            <input type="text" name="categoria" class="control" placeholder="Categoría (ej. Ventas)" maxlength="30" />
+            <input type="text" name="puestoEnCuenta" class="control" placeholder="Puesto en la cuenta" maxlength="120" />
+            <button type="submit" class="boton boton-primario">Vincular</button>
+        }
+    }
+</section>

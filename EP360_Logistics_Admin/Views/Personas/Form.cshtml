@@ -1,0 +1,95 @@
+@model EP360_Logistics_Admin.Models.PersonaModel
+@{
+    bool esNueva = Model.IdPersona == 0;
+    bool soloLectura = !esNueva && Model.EsAD;
+    var solo = soloLectura ? new { @class = "control", @readonly = "readonly" } : new { @class = "control", @readonly = (string)null };
+    ViewBag.Title = esNueva ? "Nueva persona" : "Editar persona";
+}
+
+<h1 class="titulo-pagina">@ViewBag.Title</h1>
+<p class="subtitulo-pagina">
+    @if (soloLectura)
+    {
+        <text>Usuario de AD: nombre, correo, puesto, departamento y sucursal vienen de Active Directory y no se editan aquí. Puedes cambiar teléfono y extensión.</text>
+    }
+    else
+    {
+        <text>Un contacto puede convertirse después en usuario externo.</text>
+    }
+</p>
+
+<section class="tarjeta">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdPersona)
+        @Html.ValidationSummary(true, null, new { @class = "error-formulario" })
+
+        <div class="rejilla-formulario">
+            <div class="campo">
+                @Html.LabelFor(m => m.TipoPersona)
+                @if (esNueva)
+                {
+                    @Html.DropDownListFor(m => m.TipoPersona, new[] {
+                        new SelectListItem { Value = "Contacto", Text = "Contacto (sin acceso)" },
+                        new SelectListItem { Value = "Externo", Text = "Usuario externo" } }, new { @class = "control" })
+                    @Html.ValidationMessageFor(m => m.TipoPersona, null, new { @class = "error-campo" })
+                }
+                else
+                {
+                    @Html.HiddenFor(m => m.TipoPersona)
+                    <div class="control control-fijo">@Model.TipoPersona</div>
+                }
+            </div>
+            <div class="campo campo-ancho">
+                @Html.LabelFor(m => m.NombreCompleto)
+                @Html.TextBoxFor(m => m.NombreCompleto, solo)
+                @Html.ValidationMessageFor(m => m.NombreCompleto, null, new { @class = "error-campo" })
+            </div>
+            <div class="campo campo-ancho">
+                @Html.LabelFor(m => m.Correo)
+                @Html.TextBoxFor(m => m.Correo, solo)
+                @Html.ValidationMessageFor(m => m.Correo, null, new { @class = "error-campo" })
+            </div>
+            <div class="campo">
+                @Html.LabelFor(m => m.Telefono)
+                @Html.TextBoxFor(m => m.Telefono, new { @class = "control" })
+            </div>
+            <div class="campo">
+                @Html.LabelFor(m => m.Extension)
+                @Html.TextBoxFor(m => m.Extension, new { @class = "control" })
+            </div>
+            <div class="campo campo-ancho">
+                @Html.LabelFor(m => m.Puesto)
+                @Html.TextBoxFor(m => m.Puesto, solo)
+            </div>
+            @if (soloLectura)
+            {
+                <div class="campo">
+                    @Html.LabelFor(m => m.IdDepartamento)
+                    <div class="control control-fijo">@(Model.Departamento ?? "—")</div>
+                </div>
+                <div class="campo">
+                    @Html.LabelFor(m => m.IdSucursal)
+                    <div class="control control-fijo">@(Model.Sucursal ?? "—")</div>
+                </div>
+            }
+            else
+            {
+                <div class="campo">
+                    @Html.LabelFor(m => m.IdDepartamento)
+                    @Html.DropDownListFor(m => m.IdDepartamento, (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Departamentos, "(sin departamento)", new { @class = "control" })
+                </div>
+                <div class="campo">
+                    @Html.LabelFor(m => m.IdSucursal)
+                    @Html.DropDownListFor(m => m.IdSucursal, (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "control" })
+                </div>
+            }
+        </div>
+
+        <div class="acciones-formulario">
+            <button type="submit" class="boton boton-primario">Guardar</button>
+            <a class="boton" href="@(esNueva ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdPersona }))">Cancelar</a>
+        </div>
+    }
+</section>

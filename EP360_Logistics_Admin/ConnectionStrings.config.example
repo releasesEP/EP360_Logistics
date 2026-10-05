@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<connectionStrings>
+  <add name="CadenaSQL"
+       connectionString="Data Source=TU_SERVIDOR\ep360;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True"
+       providerName="System.Data.SqlClient" />
+</connectionStrings>

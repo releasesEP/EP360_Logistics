@@ -1,0 +1,68 @@
+@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.SincronizacionADModel>
+@{
+    ViewBag.Title = "Sincronización con AD";
+}
+
+<div class="encabezado-pagina">
+    <div>
+        <h1 class="titulo-pagina">Sincronización con Active Directory</h1>
+        <p class="subtitulo-pagina">Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+    </div>
+    @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new { id = "form-sincronizar" }))
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit" id="boton-sincronizar" class="boton boton-primario"><span class="icono-material" aria-hidden="true">sync</span> Sincronizar ahora</button>
+    }
+</div>
+
+<section class="tarjeta">
+    <ul class="lista-notas">
+        <li>Se leen todos los usuarios del dominio. <strong>Aparecen en el directorio solo si cumplen todo:</strong> cuenta activa, puesto, departamento, oficina, compañía y jefe asignados en AD.</li>
+        <li>Se excluyen siempre las cuentas de sistema (HealthMailbox, SystemMailbox, DiscoverySearchMailbox, etc.).</li>
+        <li>Un usuario nuevo que no cumple no se crea. Uno que ya estaba y deja de cumplir se da de baja lógica; si vuelve a cumplir, se reactiva.</li>
+        <li>El puesto, el departamento y la oficina vienen de AD y se actualizan en cada sincronización.</li>
+        <li>Si el correo o el nombre de usuario chocan con otra persona, ese usuario se salta y queda en el detalle de errores; los demás siguen.</li>
+        <li>Puede tardar un par de minutos. No cierres la página mientras corre.</li>
+    </ul>
+</section>
+
+<section class="tarjeta tarjeta-tabla">
+    <table class="tabla">
+        <thead>
+            <tr><th>#</th><th>Inicio</th><th>Duración</th><th>Por</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualiz.</th><th class="num">Omitidos</th><th class="num">Errores</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var s in Model)
+            {
+                <tr>
+                    <td>@s.IdSincronizacion</td>
+                    <td>@s.FechaInicio.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@(s.FechaFin.HasValue ? ((int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds) + " s" : "—")</td>
+                    <td>@s.EjecutadoPor</td>
+                    <td><span class="insignia @(s.Estado == "Terminada" ? "insignia-ok" : (s.Estado == "EnCurso" ? "" : "insignia-error"))">@s.Estado</span></td>
+                    <td class="num">@s.Leidos</td>
+                    <td class="num">@s.Altas</td>
+                    <td class="num">@s.Actualizaciones</td>
+                    <td class="num">@s.Omitidos</td>
+                    <td class="num">@s.Errores</td>
+                </tr>
+                if (!string.IsNullOrEmpty(s.DetalleErrores))
+                {
+                    <tr><td colspan="10"><details><summary>Ver detalle de errores (#@s.IdSincronizacion)</summary><pre class="detalle-error">@s.DetalleErrores</pre></details></td></tr>
+                }
+            }
+            @if (Model.Count == 0)
+            {
+                <tr><td colspan="10" class="vacio">Todavía no se ha sincronizado.</td></tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<script>
+    // Evita doble clic mientras corre la sincronizacion.
+    document.getElementById("form-sincronizar").addEventListener("submit", function () {
+        var b = document.getElementById("boton-sincronizar");
+        b.disabled = true; b.textContent = "Sincronizando…";
+    });
+</script>
