@@ -1066,3 +1066,11 @@ a.footer-version-pill:hover { background: rgba(255, 255, 255, .16); color: #fff;
 
 /* Header: solo el nombre del usuario, sin avatar */
 .pastilla-usuario { padding: 6px 14px; }
+
+/* ===== Accesos a portales: boton de acceso por portal ===== */
+.btn-acceso { display: inline-flex; align-items: center; gap: 6px; min-width: 74px; justify-content: center; border: 1px solid transparent; border-radius: 999px; padding: 3px 12px; font-size: .78rem; font-weight: 700; cursor: pointer; background: transparent; transition: background .15s, color .15s, border-color .15s; }
+.btn-acceso-si { color: #15803d; background: #dcfce7; border-color: #bbf7d0; }
+.btn-acceso-si:hover { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
+.btn-acceso-no { color: var(--text-muted); border-color: var(--borde-claro); }
+.btn-acceso-no:hover { color: #1d4ed8; background: #dbeafe; border-color: #bfdbfe; }
+.tabla-ep td.celda-portal, .tabla-ep th.celda-portal { text-align: center; }
