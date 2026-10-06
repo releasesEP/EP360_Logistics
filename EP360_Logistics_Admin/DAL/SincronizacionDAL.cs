@@ -23,7 +23,7 @@ namespace EP360_Logistics_Admin.DAL
         // Devuelve la accion realizada: Alta, Actualizacion u Omitido.
         public string SincronizarUsuario(UsuarioADModel u, bool cumpleReglas)
         {
-            return Uno("sync.sp_SincronizarUsuarioAD", r => r.Texto("accion"),
+            return UnoEscritura("sync.sp_SincronizarUsuarioAD", r => r.Texto("accion"),
                 P("@objectSid", u.ObjectSid), P("@samAccountName", u.SamAccountName), P("@nombreCompleto", u.NombreCompleto),
                 P("@userPrincipalName", u.UserPrincipalName), P("@correoAD", u.Correo), P("@puesto", u.Puesto),
                 P("@departamento", u.Departamento), P("@sucursal", u.Sucursal),

@@ -1,0 +1,206 @@
+@model EP360_Logistics_Admin.Models.EstadoReplicacionModel
+@{
+    ViewBag.Title = "Replicación al 11";
+    Func<string, string> clase = c => c == "ok" ? "insignia-ok" : (c == "error" ? "insignia-error" : (c == "aviso" ? "insignia-aviso" : "insignia-info"));
+    Func<string, string> etiquetaGeneral = c => c == "ok" ? "Todo bien" : (c == "info" ? "Informativo" : (c == "aviso" ? "Atención" : "Requiere revisión"));
+    Func<string, string> etiquetaTabla = c => c == "ok" ? "Igual" : (c == "info" ? "Solo contador" : (c == "aviso" ? "Revisar" : "Distinta"));
+}
+
+<div class="pagina-replicacion">
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo-pagina">Copia en el servidor 11</h1>
+            <p class="subtitulo-pagina">Todo lo que se guarda aquí se escribe primero en el 60 y después se repite, en el mismo orden, en el 11.</p>
+        </div>
+        @if (Model.Configurada)
+        {
+            <div class="acciones">
+                @using (Html.BeginForm("Reintentar", "Replicacion", FormMethod.Post, new { @class = "en-linea" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="boton boton-primario"><span class="icono-material" aria-hidden="true">sync</span> Reintentar ahora</button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!Model.Configurada)
+    {
+        <section class="tarjeta">
+            <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">cloud_off</span><h2>La copia en el 11 no está configurada</h2></div>
+            <p>La app escribe solo en el 60.</p>
+            <p>Para activarla agrega <code>CadenaSQLReplica</code> en <code>ConnectionStrings.config</code> (o la variable de entorno de máquina <code>DB_CONNECTION_STRING_REPLICA</code>) apuntando a la base <code>EP360_Logistics</code> del 11, y reinicia la app.</p>
+        </section>
+        return;
+    }
+
+    @if (Model.UltimoErrorLocal != null)
+    {
+        <div class="aviso aviso-error" role="alert">
+            La última escritura no pudo registrarse para copiarse al 11 (@(Model.FechaUltimoErrorLocal.HasValue ? Model.FechaUltimoErrorLocal.Value.ToString("yyyy-MM-dd HH:mm") : "")): @Model.UltimoErrorLocal
+            Lo más probable es que falte correr los scripts 10 y 10c en el 60.
+        </div>
+    }
+
+    @* ---------- Resumen general: qué pasa, por qué y qué hacer ---------- *@
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">@(Model.ClaseGeneral == "ok" ? "check_circle" : (Model.ClaseGeneral == "info" ? "info" : "warning"))</span>
+            <h2>@Model.TituloGeneral</h2>
+            <span class="insignia @clase(Model.ClaseGeneral)">@etiquetaGeneral(Model.ClaseGeneral)</span>
+        </div>
+        <p>@Model.ExplicacionGeneral</p>
+        @if (Model.ErrorMaestro != null)
+        {
+            <p class="nota"><strong>Detalle técnico (60):</strong> @Model.ErrorMaestro</p>
+        }
+        @if (Model.ErrorCopia != null)
+        {
+            <p class="nota"><strong>Detalle técnico (11):</strong> @Model.ErrorCopia</p>
+        }
+        @if (Model.PasosSugeridos != null && Model.PasosSugeridos.Count > 0)
+        {
+            <p><strong>Qué hacer</strong></p>
+            <ol class="lista-notas">
+                @foreach (var paso in Model.PasosSugeridos)
+                {
+                    <li>@paso</li>
+                }
+            </ol>
+        }
+        @if (Model.PuedeAlinearContadores)
+        {
+            <div class="formulario-linea">
+                @using (Html.BeginForm("AlinearContadores", "Replicacion", FormMethod.Post, new { @class = "en-linea", onsubmit = "return confirm('Sube los contadores de ids del 11 hasta los del 60 en las tablas con las mismas filas. No toca datos. ¿Continuar?');" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="boton boton-primario">Alinear contadores</button>
+                }
+            </div>
+        }
+        @if (Model.Resumen != null)
+        {
+            <dl class="datos resumen-lista">
+                <div><dt>Pendientes</dt><dd>@Model.Resumen.Pendientes</dd></div>
+                <div><dt>Divergentes</dt><dd>@Model.Resumen.Divergentes</dd></div>
+                <div><dt>Aplicadas en el 11</dt><dd>@Model.Resumen.Aplicadas</dd></div>
+                <div><dt>Última aplicada</dt><dd>@(Model.Resumen.UltimaAplicada.HasValue ? Model.Resumen.UltimaAplicada.Value.ToString("yyyy-MM-dd HH:mm") : "—")</dd></div>
+            </dl>
+        }
+    </section>
+
+    @* ---------- Operaciones con problema ---------- *@
+    @if (Model.Errores.Count > 0)
+    {
+        <section class="tarjeta tarjeta-tabla">
+            <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">report</span><h2>Operaciones con problema</h2></div>
+            <table class="tabla">
+                <thead>
+                    <tr><th>#</th><th>Qué se hizo</th><th>Quién</th><th>Cuándo</th><th>Estado</th><th class="num">Intentos</th><th>Último error</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Errores)
+                    {
+                        <tr>
+                            <td>@e.IdCola</td>
+                            <td>@e.Descripcion</td>
+                            <td>@(e.Usuario ?? "—")</td>
+                            <td>@e.FechaCreacion.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td><span class="insignia @(e.Estado == "Divergente" ? "insignia-error" : "insignia-aviso")">@e.Estado</span></td>
+                            <td class="num">@e.Intentos</td>
+                            <td>@e.UltimoError</td>
+                            <td class="acciones"><a class="boton boton-chico" href="@Url.Action("Operacion", new { id = e.IdCola })">Ver detalle</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="formulario-linea" style="padding: 0 var(--space-5) var(--space-4);">
+                @using (Html.BeginForm("Descartar", "Replicacion", FormMethod.Post, new { @class = "en-linea", onsubmit = "return confirm('Descarta TODO lo pendiente o divergente. Úsalo solo si ya volviste a copiar la base del 60 al 11. ¿Continuar?');" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="boton boton-peligro boton-chico">Descartar todo (solo después de volver a copiar la base)</button>
+                }
+            </div>
+        </section>
+    }
+
+    @* ---------- Comparación por tabla ---------- *@
+    @if (Model.Comparativo.Count > 0)
+    {
+        <section class="tarjeta tarjeta-tabla">
+            <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">compare_arrows</span><h2>Comparación tabla por tabla</h2></div>
+            <table class="tabla">
+                <thead>
+                    <tr><th>Tabla</th><th class="num">Filas 60</th><th class="num">Filas 11</th><th class="num">Siguiente id 60</th><th class="num">Siguiente id 11</th><th>Estado</th><th>Qué pasa y qué hacer</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Comparativo)
+                    {
+                        <tr>
+                            <td>@c.Tabla</td>
+                            <td class="num">@c.Maestro.Filas</td>
+                            <td class="num">@(c.Copia == null ? "—" : c.Copia.Filas.ToString())</td>
+                            <td class="num">@(c.Maestro.UltimoId.HasValue ? c.Maestro.UltimoId.Value.ToString() : "—")</td>
+                            <td class="num">@(c.Copia == null || !c.Copia.UltimoId.HasValue ? "—" : c.Copia.UltimoId.Value.ToString())</td>
+                            <td><span class="insignia @clase(c.Clase)">@etiquetaTabla(c.Clase)</span></td>
+                            <td>
+                                @if (c.Clase != "ok")
+                                {
+                                    <div>@c.Resumen</div>
+                                    if (!string.IsNullOrEmpty(c.Sugerencia)) { <div class="nota">@c.Sugerencia</div> }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="nota">«Siguiente id» es el último número que usó cada tabla. En el 60 puede ir adelante de las filas (altas revertidas o borradas); lo importante es que el 11 lleve el mismo número, para que la próxima alta reciba el mismo id en los dos.</p>
+        </section>
+    }
+
+    @* ---------- Historial ---------- *@
+    @if (Model.Historial.Count > 0)
+    {
+        <section class="tarjeta tarjeta-tabla">
+            <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">history</span><h2>Últimas operaciones resueltas</h2></div>
+            <table class="tabla">
+                <thead>
+                    <tr><th>#</th><th>Qué se hizo</th><th>Quién</th><th>Cuándo</th><th>Resultado</th><th>Resuelta por</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.Historial)
+                    {
+                        <tr>
+                            <td><a href="@Url.Action("Operacion", new { id = h.IdCola })">@h.IdCola</a></td>
+                            <td>@h.Descripcion</td>
+                            <td>@(h.Usuario ?? "—")</td>
+                            <td>@(h.FechaAplicada.HasValue ? h.FechaAplicada.Value.ToString("yyyy-MM-dd HH:mm") : h.FechaCreacion.ToString("yyyy-MM-dd HH:mm"))</td>
+                            <td><span class="insignia @(h.Estado == "Aplicada" ? "insignia-ok" : "insignia-aviso")">@(h.Estado == "Aplicada" ? "Aplicada en el 11" : "Omitida")</span></td>
+                            <td>@(h.ResueltaPor ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </section>
+    }
+    else if (Model.ErrorMaestro == null)
+    {
+        <p class="nota">Aún no hay operaciones resueltas que mostrar.</p>
+    }
+
+    @* ---------- Guía de lectura ---------- *@
+    <section class="tarjeta">
+        <details>
+            <summary><strong>Cómo leer esta pantalla</strong></summary>
+            <ul class="lista-notas">
+                <li><strong>Pendiente</strong>: se guardó en el 60 pero aún no se repite en el 11 (el 11 no respondió). Se reintenta solo cada minuto, en orden.</li>
+                <li><strong>Divergente</strong>: funcionó en el 60 pero el 11 la rechazó o dio otro resultado. Bloquea lo que sigue hasta revisarla.</li>
+                <li><strong>Omitida</strong>: un administrador decidió dejarla pasar. El 11 puede no tener ese cambio.</li>
+                <li><strong>Solo contador</strong>: los datos son iguales, pero el contador de ids del 11 va atrasado. «Alinear contadores» lo corrige sin tocar datos.</li>
+                <li>Esta pantalla solo ve lo que se guarda desde esta app. Si otro programa escribe directo en el 60 o en el 11, aparecerá como diferencia de filas.</li>
+            </ul>
+        </details>
+    </section>
+
+</div>

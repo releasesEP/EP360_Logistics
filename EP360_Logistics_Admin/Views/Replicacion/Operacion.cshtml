@@ -1,0 +1,85 @@
+@model EP360_Logistics_Admin.Models.OperacionReplicacionModel
+@{
+    ViewBag.Title = "Operación #" + Model.IdCola;
+    string claseEstado = Model.Estado == "Aplicada" ? "insignia-ok" : (Model.Estado == "Divergente" ? "insignia-error" : "insignia-aviso");
+}
+
+<div class="pagina-replicacion">
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo-pagina">Operación #@Model.IdCola</h1>
+            <p class="subtitulo-pagina">@Model.Descripcion</p>
+        </div>
+        <div class="acciones">
+            <a class="boton" href="@Url.Action("Index")">Volver</a>
+        </div>
+    </div>
+
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado">
+            <span class="icono-material" aria-hidden="true">help</span><h2>Qué significa y qué hacer</h2>
+            <span class="insignia @claseEstado">@Model.Estado</span>
+        </div>
+        <p><strong>Qué significa:</strong> @Model.QueSignifica</p>
+        <p><strong>Qué hacer:</strong> @Model.QueHacer</p>
+
+        @if (Model.PuedeOmitir)
+        {
+            <div class="formulario-linea">
+                @using (Html.BeginForm("Reintentar", "Replicacion", FormMethod.Post, new { @class = "en-linea" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="boton boton-primario">Reintentar ahora</button>
+                }
+                @using (Html.BeginForm("Omitir", "Replicacion", new { id = Model.IdCola }, FormMethod.Post, new { @class = "en-linea", onsubmit = "return confirm('Omitir deja esta operación sin copiar: el 11 puede quedar distinto al 60 en lo que cambiaba. Úsalo solo si ya corregiste ese dato en el 11 o ya no importa. ¿Omitir?');" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="boton boton-peligro">Omitir esta operación</button>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="tarjeta">
+        <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">receipt_long</span><h2>Datos de la operación</h2></div>
+        <dl class="datos">
+            <div><dt>Procedimiento</dt><dd>@Model.Procedimiento</dd></div>
+            <div><dt>La hizo</dt><dd>@(Model.Usuario ?? "—")</dd></div>
+            <div><dt>Fecha</dt><dd>@Model.FechaCreacion.ToString("yyyy-MM-dd HH:mm:ss")</dd></div>
+            <div><dt>Intentos en el 11</dt><dd>@Model.Intentos@(Model.FechaUltimoIntento.HasValue ? " (último: " + Model.FechaUltimoIntento.Value.ToString("yyyy-MM-dd HH:mm:ss") + ")" : "")</dd></div>
+            <div><dt>Resultado que dio el 60</dt><dd>@(Model.ResultadoMaestro ?? "—")</dd></div>
+            @if (Model.FechaAplicada.HasValue)
+            {
+                <div><dt>Resuelta</dt><dd>@Model.FechaAplicada.Value.ToString("yyyy-MM-dd HH:mm:ss")@(Model.ResueltaPor != null ? " por " + Model.ResueltaPor : "")</dd></div>
+            }
+        </dl>
+        @if (!string.IsNullOrEmpty(Model.UltimoError))
+        {
+            <p class="nota">Último error</p>
+            <div class="detalle-error">@Model.UltimoError</div>
+        }
+    </section>
+
+    @if (Model.Parametros != null && Model.Parametros.Count > 0)
+    {
+        <section class="tarjeta tarjeta-tabla">
+            <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">dataset</span><h2>Con qué datos</h2></div>
+            <table class="tabla">
+                <thead><tr><th>Parámetro</th><th>Valor</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Parametros)
+                    {
+                        <tr><td><code>@p.Key</code></td><td>@p.Value</td></tr>
+                    }
+                </tbody>
+            </table>
+            <p class="nota">Las contraseñas y hashes se muestran ocultos.</p>
+        </section>
+    }
+    else if (Model.Estado == "Aplicada" || Model.Estado == "Omitida")
+    {
+        <p class="nota">Al resolverse la operación se borran sus datos de la cola (pueden incluir hashes de contraseña); por eso ya no se listan.</p>
+    }
+
+</div>

@@ -29,6 +29,8 @@
             <a href="@Url.Action("Index", "Cuentas")" class="@(controladorActual == "Cuentas" ? "activo" : "")">Cuentas</a>
             <a href="@Url.Action("Index", "Grupos")" class="@(controladorActual == "Grupos" ? "activo" : "")">Grupos</a>
             <a href="@Url.Action("Index", "Sincronizacion")" class="@(controladorActual == "Sincronizacion" ? "activo" : "")">Sincronización</a>
+            @{ var alertaReplicacion = EP360_Logistics_Admin.Helpers.AlertaReplicacion.Texto(); }
+            <a href="@Url.Action("Index", "Replicacion")" class="@(controladorActual == "Replicacion" ? "activo" : "")" @(alertaReplicacion != null ? Html.Raw("title=\"" + HttpUtility.HtmlAttributeEncode(alertaReplicacion) + "\"") : null)>Replicación @if (alertaReplicacion != null) { <span class="insignia insignia-error" aria-label="@alertaReplicacion">!</span> }</a>
         </nav>
         <div class="topbar-espaciador"></div>
         <div class="topbar-utilidades">
