@@ -2,27 +2,37 @@
 @{
     bool esNuevo = Model.IdGrupoCuenta == 0;
     ViewBag.Title = esNuevo ? "Nuevo grupo" : "Editar grupo";
+    string urlCancelar = esNuevo ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdGrupoCuenta });
 }
 
-<h1 class="titulo-pagina">@ViewBag.Title</h1>
-<p class="subtitulo-pagina">@(esNuevo ? "El folio se genera automáticamente." : "Folio " + Model.Folio)</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@urlCancelar" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-layer-group"></i>@ViewBag.Title</h3>
+            <p>@(esNuevo ? "El folio se genera automáticamente. Después de guardarlo le agregas sus cuentas." : "Folio " + Model.Folio)</p>
+        </div>
+    </div>
+</div>
 
-<section class="tarjeta">
+<div class="form-ep" style="max-width:640px;">
     @using (Html.BeginForm())
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.IdGrupoCuenta)
-        @Html.ValidationSummary(true, null, new { @class = "error-formulario" })
-
-        <div class="campo">
-            @Html.LabelFor(m => m.Nombre)
-            @Html.TextBoxFor(m => m.Nombre, new { @class = "control", autofocus = "autofocus" })
-            @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Nombre del grupo</div>
+                @Html.LabelFor(m => m.Nombre)
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. INVENTEC" })
+                @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+                <span class="ayuda-campo">Normalmente el nombre del cliente. No se puede repetir entre grupos activos.</span>
+            </div>
         </div>
-
-        <div class="acciones-formulario">
-            <button type="submit" class="boton boton-primario">Guardar</button>
-            <a class="boton" href="@Url.Action("Index")">Cancelar</a>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@urlCancelar">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
         </div>
     }
-</section>
+</div>

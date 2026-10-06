@@ -1,54 +1,163 @@
-@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.PersonaModel>
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.PersonaModel>
 @{
     ViewBag.Title = "Personas";
-    bool inactivos = ViewBag.Inactivos;
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
     string tipo = ViewBag.Tipo;
+    string volver = Request.RawUrl;
+    Func<PersonaModel, string> colorAvatar = p => !p.Activo ? "av-gris" : p.TipoPersona == "AD" ? "" : p.TipoPersona == "Externo" ? "av-morado" : "av-ambar";
 }
 
-<div class="encabezado-pagina">
-    <div>
-        <h1 class="titulo-pagina">Personas</h1>
-        <p class="subtitulo-pagina">Usuarios de AD, usuarios externos y contactos. Los usuarios de AD se sincronizan; aquí se dan de alta contactos y externos.</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-users"></i>Personas</h3>
+            <p>Usuarios de AD (se sincronizan del dominio), usuarios externos y contactos de clientes.</p>
+        </div>
     </div>
-    <a class="boton boton-primario" href="@Url.Action("Crear")"><span class="icono-material" aria-hidden="true">add</span> Nueva persona</a>
+    <div class="encabezado-acciones">
+        <a class="btn-suave" href="@Url.Action("Index", "Sincronizacion")"><i class="fas fa-rotate"></i> Sincronizar AD</a>
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-user-plus"></i> Nueva persona</a>
+    </div>
 </div>
 
-@using (Html.BeginForm("Index", "Personas", FormMethod.Get, new { @class = "barra-filtros" }))
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-users"></i></div><div class="kpi-tile-etiqueta">Personas activas</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivas).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "AD" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fab fa-windows"></i></div><div class="kpi-tile-etiqueta">Usuarios de AD</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalAD).ToString("N0"))</div><span class="kpi-tile-detalle">Entran con su cuenta de Windows</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Usuarios externos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalExternos).ToString("N0"))</div><span class="kpi-tile-detalle">Entran con correo y contraseña</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "Contacto" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-address-card"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalContactos).ToString("N0"))</div><span class="kpi-tile-detalle">Sin acceso a los portales</span></a></div>
+    <div class="col-6 col-lg"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-sitemap"></i></div><div class="kpi-tile-etiqueta">Sin departamento</div><div class="kpi-tile-valor">@(((int)ViewBag.SinDepartamento).ToString("N0"))</div><span class="kpi-tile-detalle">Activas sin departamento</span></div></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="orden" value="@Request.QueryString["orden"]" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por nombre, correo, usuario, puesto o extensión..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        <select name="tipo" class="form-select form-select-sm" aria-label="Tipo">
+            <option value="">Todos los tipos</option>
+            <option value="AD" @(tipo == "AD" ? "selected" : "")>Usuarios de AD</option>
+            <option value="Externo" @(tipo == "Externo" ? "selected" : "")>Usuarios externos</option>
+            <option value="Contacto" @(tipo == "Contacto" ? "selected" : "")>Contactos</option>
+        </select>
+        @Html.DropDownList("idDepartamento", (IEnumerable<SelectListItem>)ViewBag.Departamentos, "Todos los departamentos", new { @class = "form-select form-select-sm" })
+        @Html.DropDownList("idSucursal", (IEnumerable<SelectListItem>)ViewBag.Sucursales, "Todas las sucursales", new { @class = "form-select form-select-sm" })
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
 {
-    <input type="text" name="buscar" value="@ViewBag.Buscar" class="control" placeholder="Buscar por nombre, correo o usuario" />
-    <select name="tipo" class="control">
-        <option value="">Todos los tipos</option>
-        <option value="AD" @(tipo == "AD" ? "selected" : "")>Usuarios de AD</option>
-        <option value="Externo" @(tipo == "Externo" ? "selected" : "")>Usuarios externos</option>
-        <option value="Contacto" @(tipo == "Contacto" ? "selected" : "")>Contactos</option>
-    </select>
-    <label class="check"><input type="checkbox" name="inactivos" value="true" @(inactivos ? "checked" : "") /> Incluir inactivas</label>
-    <button type="submit" class="boton">Filtrar</button>
-    <span class="contador">@Model.Count personas (máx. 500)</span>
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-user-slash"></i></div>
+            <h6>No hay personas con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Persona", "nombre")
+                        @Html.ColumnaOrden("Tipo", "tipo")
+                        @Html.ColumnaOrden("Puesto y departamento", "departamento")
+                        @Html.ColumnaOrden("Sucursal", "sucursal")
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Items)
+                    {
+                        <tr class="@(p.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep @colorAvatar(p)">@TextoUtil.Iniciales(p.NombreCompleto)</span>
+                                    <div style="min-width:0;">
+                                        <a class="nombre" href="@Url.Action("Detalle", new { id = p.IdPersona })">@p.NombreCompleto</a>
+                                        <span class="sub">@(p.Correo ?? (p.SamAccountName != null ? "@" + p.SamAccountName : "Sin correo"))</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if (p.TipoPersona == "AD")
+                                {
+                                    <span class="pastilla pastilla-azul"><i class="fab fa-windows"></i>AD</span>
+                                }
+                                else if (p.TipoPersona == "Externo")
+                                {
+                                    <span class="pastilla pastilla-morado"><i class="fas fa-key"></i>Externo</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-ambar"><i class="fas fa-address-card"></i>Contacto</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="d-block fw-semibold">@(p.Puesto ?? "—")</span>
+                                <span class="texto-tenue small">@(p.Departamento ?? "Sin departamento")</span>
+                            </td>
+                            <td>@(p.Sucursal ?? "—")</td>
+                            <td class="small">
+                                @if (p.Extension != null) { <span class="d-block"><i class="fas fa-phone-volume texto-tenue me-1"></i>Ext. @p.Extension</span> }
+                                @if (p.Telefono != null) { <span class="d-block"><i class="fas fa-mobile-screen texto-tenue me-1"></i>@p.Telefono</span> }
+                                @if (p.Extension == null && p.Telefono == null) { <span class="texto-tenue">—</span> }
+                            </td>
+                            <td>
+                                @if (p.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Detalle", new { id = p.IdPersona })"><i class="fas fa-eye"></i> Ver ficha</a>
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = p.IdPersona })"><i class="fas fa-pen"></i> Editar</a>
+                                        @if (!p.EsAD)
+                                        {
+                                            <div class="dropdown-divider"></div>
+                                            using (Html.BeginForm(p.Activo ? "Desactivar" : "Reactivar", "Personas", new { id = p.IdPersona }, FormMethod.Post, new
+                                            {
+                                                data_confirmar = p.Activo ? "¿Desactivar a " + p.NombreCompleto + "?" : "¿Reactivar a " + p.NombreCompleto + "?",
+                                                data_confirmar_detalle = p.Activo ? "Dejará de aparecer en los portales. Puedes reactivarla cuando quieras." : "Volverá a aparecer en el directorio.",
+                                                data_confirmar_tipo = p.Activo ? "peligro" : "normal",
+                                                data_confirmar_boton = p.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                            }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="returnUrl" value="@volver" />
+                                                <button type="submit" class="dropdown-item @(p.Activo ? "texto-peligro" : "")">
+                                                    <i class="fas @(p.Activo ? "fa-user-slash" : "fa-user-check")"></i> @(p.Activo ? "Desactivar" : "Reactivar")
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }
 
-<section class="tarjeta tarjeta-tabla">
-    <table class="tabla">
-        <thead>
-            <tr><th>Nombre</th><th>Tipo</th><th>Correo</th><th>Usuario AD</th><th>Departamento</th><th>Sucursal</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var p in Model)
-            {
-                <tr class="@(p.Activo ? "" : "fila-inactiva")">
-                    <td><a href="@Url.Action("Detalle", new { id = p.IdPersona })">@p.NombreCompleto</a></td>
-                    <td>@p.TipoPersona</td>
-                    <td>@p.Correo</td>
-                    <td>@p.SamAccountName</td>
-                    <td>@p.Departamento</td>
-                    <td>@p.Sucursal</td>
-                    <td>@(p.Activo ? "Activa" : "Inactiva")</td>
-                </tr>
-            }
-            @if (Model.Count == 0)
-            {
-                <tr><td colspan="7" class="vacio">No hay personas con esos filtros.</td></tr>
-            }
-        </tbody>
-    </table>
-</section>
+@Html.Partial("_Paginacion", (IPaginado)Model)

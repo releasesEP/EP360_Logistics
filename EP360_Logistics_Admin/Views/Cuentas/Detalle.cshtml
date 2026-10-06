@@ -1,82 +1,287 @@
 @model EP360_Logistics_Admin.Models.CuentaModel
-@using EP360_Logistics_Admin.Models
 @{
     ViewBag.Title = Model.NombreComercial;
-    var personas = (System.Collections.Generic.List<PersonaCuentaModel>)ViewBag.Personas;
-    var vinculables = (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Vinculables;
+    var personas = (List<PersonaCuentaModel>)ViewBag.Personas;
+    var vinculables = (IEnumerable<SelectListItem>)ViewBag.Vinculables;
+    var cajas = (List<CajaModel>)ViewBag.Cajas;
+    string volver = Request.RawUrl;
 }
 
-<div class="encabezado-pagina">
-    <div>
-        <h1 class="titulo-pagina">@Model.NombreComercial @if (!Model.Activo) { <span class="insignia insignia-error">Inactiva</span> }</h1>
-        <p class="subtitulo-pagina">Folio @Model.Folio</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver a Cuentas" aria-label="Volver a Cuentas"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-building"></i>Ficha de cuenta</h3>
+            <p>Datos del cliente, sus contactos y las cajas que tiene.</p>
+        </div>
     </div>
-    <div class="acciones">
-        <a class="boton" href="@Url.Action("Index")">Volver</a>
-        <a class="boton" href="@Url.Action("Editar", new { id = Model.IdCuenta })">Editar</a>
-        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Cuentas", new { id = Model.IdCuenta }, FormMethod.Post, new { @class = "en-linea" }))
+</div>
+
+<div class="perfil-cabecera">
+    <span class="avatar-ep grande @(Model.Activo ? "" : "av-gris")">@TextoUtil.Iniciales(Model.NombreComercial)</span>
+    <div class="perfil-info">
+        <h3>
+            @Model.NombreComercial
+            @if (Model.Activo)
+            {
+                <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+            }
+            else
+            {
+                <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+            }
+        </h3>
+        <div class="perfil-meta">
+            <span><i class="fas fa-hashtag"></i>@Model.Folio</span>
+            @if (Model.IdGrupoCuenta.HasValue)
+            {
+                <span><i class="fas fa-layer-group"></i><a href="@Url.Action("Detalle", "Grupos", new { id = Model.IdGrupoCuenta })">@Model.GrupoCuenta</a></span>
+            }
+            else
+            {
+                <span><i class="fas fa-layer-group"></i>Sin grupo</span>
+            }
+            @if (Model.Ciudad != null) { <span><i class="fas fa-city"></i>@Model.Ciudad (@Model.Pais)</span> }
+            @if (Model.Sucursal != null) { <span><i class="fas fa-location-dot"></i>@Model.Sucursal</span> }
+            @if (Model.Rfc != null) { <span><i class="fas fa-id-badge"></i>@Model.Rfc</span> }
+        </div>
+    </div>
+    <div class="perfil-acciones">
+        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdCuenta })"><i class="fas fa-pen"></i> Editar</a>
+        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Cuentas", new { id = Model.IdCuenta }, FormMethod.Post, new
+        {
+            data_confirmar = Model.Activo ? "¿Desactivar la cuenta " + Model.NombreComercial + "?" : "¿Reactivar la cuenta " + Model.NombreComercial + "?",
+            data_confirmar_detalle = Model.Activo ? "También se quitan sus contactos y se dan de baja sus cajas. Puedes reactivarla después." : "Sus contactos y cajas se reactivan uno por uno.",
+            data_confirmar_tipo = Model.Activo ? "peligro" : "normal",
+            data_confirmar_boton = Model.Activo ? "Sí, desactivar" : "Sí, reactivar"
+        }))
         {
             @Html.AntiForgeryToken()
-            <button type="submit" class="boton @(Model.Activo ? "boton-peligro" : "boton-primario")">@(Model.Activo ? "Desactivar" : "Reactivar")</button>
+            <input type="hidden" name="returnUrl" value="@volver" />
+            <button type="submit" class="@(Model.Activo ? "btn-peligro-suave" : "btn-suave btn-exito-suave")"><i class="fas @(Model.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(Model.Activo ? "Desactivar" : "Reactivar")</button>
         }
     </div>
 </div>
 
-<section class="tarjeta">
-    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">apartment</span><h2>Datos de la cuenta</h2></div>
-    <dl class="datos">
-        <div><dt>Código</dt><dd>@(Model.CodigoCuenta ?? "—")</dd></div>
-        <div><dt>Razón social</dt><dd>@(Model.RazonSocial ?? "—")</dd></div>
-        <div><dt>RFC</dt><dd>@(Model.Rfc ?? "—")</dd></div>
-        <div><dt>Grupo</dt><dd>@(Model.GrupoCuenta ?? "—")</dd></div>
-        <div><dt>Ciudad</dt><dd>@(Model.Ciudad != null ? Model.Ciudad + " (" + Model.Pais + ")" : "—")</dd></div>
-        <div><dt>Sucursal</dt><dd>@(Model.Sucursal ?? "—")</dd></div>
-    </dl>
-</section>
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-address-book"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@personas.Count</div></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@cajas.Count</div><span class="kpi-tile-detalle">de la cuenta y de su grupo</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@cajas.Where(k => k.IdTransportista.HasValue).Select(k => k.IdTransportista).Distinct().Count()</div><span class="kpi-tile-detalle">mueven sus cajas</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Con acceso</div><div class="kpi-tile-valor">@personas.Count(p => p.TipoPersona == "Externo")</div><span class="kpi-tile-detalle">contactos que son usuarios externos</span></div></div>
+</div>
 
-<section class="tarjeta">
-    <div class="tarjeta-encabezado"><span class="icono-material" aria-hidden="true">contacts</span><h2>Contactos de la cuenta (@personas.Count)</h2></div>
-    <table class="tabla">
-        <thead><tr><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Categoría</th><th>Puesto</th><th>Tipo</th><th></th></tr></thead>
-        <tbody>
-            @foreach (var p in personas)
-            {
-                <tr>
-                    <td><a href="@Url.Action("Detalle", "Personas", new { id = p.IdPersona })">@p.NombrePersona</a></td>
-                    <td>@p.Correo</td>
-                    <td>@p.Telefono</td>
-                    <td>@p.Categoria</td>
-                    <td>@p.PuestoEnCuenta</td>
-                    <td>@p.TipoPersona</td>
-                    <td class="acciones">
-                        @using (Html.BeginForm("DesvincularPersona", "Cuentas", FormMethod.Post, new { @class = "en-linea" }))
+<ul class="nav pestanas-ep" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#info" type="button" role="tab"><i class="fas fa-circle-info"></i> Información</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#contactos" type="button" role="tab"><i class="fas fa-address-book"></i> Contactos <span class="contador">@personas.Count</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cajas" type="button" role="tab"><i class="fas fa-trailer"></i> Cajas <span class="contador">@cajas.Count</span></button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="info" role="tabpanel">
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="tarjeta-ep h-100 mb-0">
+                    <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-id-card"></i> Identificación</h6></div>
+                    <div class="tarjeta-ep-cuerpo">
+                        <dl class="datos-ep">
+                            <div><dt>Nombre comercial</dt><dd>@Model.NombreComercial</dd></div>
+                            <div><dt>Folio</dt><dd>@Model.Folio</dd></div>
+                            <div><dt>Código de cuenta</dt><dd class="@(Model.CodigoCuenta == null ? "vacio" : "")">@(Model.CodigoCuenta ?? "Sin capturar")</dd></div>
+                            <div><dt>RFC</dt><dd class="@(Model.Rfc == null ? "vacio" : "")">@(Model.Rfc ?? "Sin capturar")</dd></div>
+                            <div><dt>Razón social</dt><dd class="@(Model.RazonSocial == null ? "vacio" : "")">@(Model.RazonSocial ?? "Sin capturar")</dd></div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="tarjeta-ep h-100 mb-0">
+                    <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-map-location-dot"></i> Ubicación y grupo</h6></div>
+                    <div class="tarjeta-ep-cuerpo">
+                        <dl class="datos-ep">
+                            <div>
+                                <dt>Grupo</dt>
+                                <dd>
+                                    @if (Model.IdGrupoCuenta.HasValue)
+                                    {
+                                        <a href="@Url.Action("Detalle", "Grupos", new { id = Model.IdGrupoCuenta })">@Model.GrupoCuenta</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="texto-tenue">Sin grupo</span>
+                                    }
+                                </dd>
+                            </div>
+                            <div><dt>Ciudad</dt><dd class="@(Model.Ciudad == null ? "vacio" : "")">@(Model.Ciudad != null ? Model.Ciudad + " (" + Model.Pais + ")" : "Sin ciudad")</dd></div>
+                            <div><dt>Sucursal</dt><dd class="@(Model.Sucursal == null ? "vacio" : "")">@(Model.Sucursal ?? "Sin sucursal")</dd></div>
+                        </dl>
+                        @if (Model.IdGrupoCuenta.HasValue)
                         {
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
-                            <input type="hidden" name="idPersona" value="@p.IdPersona" />
-                            <button type="submit" class="boton boton-chico">Quitar</button>
+                            <div class="aviso-ep mt-3"><i class="fas fa-circle-info"></i><span>Quien es contacto de esta cuenta ve todas las cuentas del grupo @Model.GrupoCuenta.</span></div>
                         }
-                    </td>
-                </tr>
-            }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="contactos" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-address-book"></i> Contactos de la cuenta <span class="contador">@personas.Count</span></h6>
+                <p>Personas del cliente ligadas a esta cuenta. Las que son usuarios externos pueden entrar a los portales.</p>
+            </div>
             @if (personas.Count == 0)
             {
-                <tr><td colspan="7" class="vacio">Esta cuenta no tiene contactos.</td></tr>
+                <div class="vacio-ep">
+                    <div class="vacio-icono"><i class="fas fa-user-slash"></i></div>
+                    <h6>Sin contactos</h6>
+                    <p>Esta cuenta todavía no tiene contactos.</p>
+                </div>
             }
-        </tbody>
-    </table>
+            else
+            {
+                <div class="table-responsive">
+                    <table class="tabla-ep">
+                        <thead><tr><th>Persona</th><th>Tipo</th><th>Teléfono</th><th>Categoría</th><th>Puesto</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var p in personas)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="celda-principal">
+                                            <span class="avatar-ep @(p.TipoPersona == "Externo" ? "av-morado" : p.TipoPersona == "Contacto" ? "av-ambar" : "")">@TextoUtil.Iniciales(p.NombrePersona)</span>
+                                            <div style="min-width:0;">
+                                                <a class="nombre" href="@Url.Action("Detalle", "Personas", new { id = p.IdPersona })">@p.NombrePersona</a>
+                                                <span class="sub">@(p.Correo ?? "Sin correo")</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (p.TipoPersona == "Externo")
+                                        {
+                                            <span class="pastilla pastilla-morado"><i class="fas fa-key"></i>Externo</span>
+                                        }
+                                        else if (p.TipoPersona == "AD")
+                                        {
+                                            <span class="pastilla pastilla-azul"><i class="fab fa-windows"></i>AD</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pastilla pastilla-ambar"><i class="fas fa-address-card"></i>Contacto</span>
+                                        }
+                                    </td>
+                                    <td>@(p.Telefono ?? "—")</td>
+                                    <td>@(p.Categoria ?? "—")</td>
+                                    <td>@(p.PuestoEnCuenta ?? "—")</td>
+                                    <td class="celda-acciones">
+                                        @using (Html.BeginForm("DesvincularPersona", "Cuentas", FormMethod.Post, new
+                                        {
+                                            data_confirmar = "¿Quitar a " + p.NombrePersona + " de esta cuenta?",
+                                            data_confirmar_detalle = "Deja de ser contacto de " + Model.NombreComercial + ". La persona sigue en el directorio.",
+                                            data_confirmar_boton = "Sí, quitar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
+                                            <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                                            <button type="submit" class="btn-peligro-suave btn-sm-ep"><i class="fas fa-link-slash"></i> Quitar</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (Model.Activo)
+            {
+                <div class="tarjeta-ep-pie">
+                    @using (Html.BeginForm("VincularPersona", "Cuentas", FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold texto-secundario mb-1">Ligar un contacto</label>
+                            @Html.DropDownList("idPersona", vinculables, "Elige una persona…", new { @class = "form-select" })
+                        </div>
+                        <div class="col-md-3"><input type="text" name="categoria" class="form-control" placeholder="Categoría (ej. Ventas)" maxlength="30" /></div>
+                        <div class="col-md-2"><input type="text" name="puestoEnCuenta" class="form-control" placeholder="Puesto" maxlength="120" /></div>
+                        <div class="col-md-2 d-grid"><button type="submit" class="btn-corporativo"><i class="fas fa-link"></i> Ligar</button></div>
+                    }
+                    <p class="ayuda-campo mt-2 mb-0">¿No está en la lista? <a href="@Url.Action("Crear", "Personas")">Da de alta a la persona</a> y ligala aquí. Solo aparecen contactos y usuarios externos.</p>
+                </div>
+            }
+        </div>
+    </div>
 
-    @if (Model.Activo)
-    {
-        using (Html.BeginForm("VincularPersona", "Cuentas", FormMethod.Post, new { @class = "formulario-linea" }))
-        {
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="idCuenta" value="@Model.IdCuenta" />
-            @Html.DropDownList("idPersona", vinculables, "Elige una persona…", new { @class = "control" })
-            <input type="text" name="categoria" class="control" placeholder="Categoría (ej. Ventas)" maxlength="30" />
-            <input type="text" name="puestoEnCuenta" class="control" placeholder="Puesto en la cuenta" maxlength="120" />
-            <button type="submit" class="boton boton-primario">Vincular</button>
-        }
-        <p class="nota">¿No está en la lista? <a href="@Url.Action("Crear", "Personas")">Crea la persona</a> y vincúlala aquí.</p>
-    }
-</section>
+    <div class="tab-pane fade" id="cajas" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-trailer"></i> Cajas del cliente <span class="contador">@cajas.Count</span></h6>
+                <p>Cajas activas ligadas a esta cuenta@(Model.IdGrupoCuenta.HasValue ? " y al grupo " + Model.GrupoCuenta : "").</p>
+            </div>
+            @if (cajas.Count == 0)
+            {
+                <div class="vacio-ep">
+                    <div class="vacio-icono"><i class="fas fa-trailer"></i></div>
+                    <h6>Sin cajas</h6>
+                    <p>Este cliente no tiene cajas registradas.</p>
+                </div>
+            }
+            else
+            {
+                <div class="px-3 pt-3">
+                    <div class="listado-buscar" style="max-width:360px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar caja, placa o transportista..." data-filtrar-tabla="#tablaCajasCuenta" data-filtrar-vacio="#cajasCuentaVacio" /></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="tabla-ep" id="tablaCajasCuenta">
+                        <thead><tr><th>Caja</th><th>Ligada a</th><th>Transportista habitual</th><th>Placa / VIN</th><th>Datos</th></tr></thead>
+                        <tbody>
+                            @foreach (var k in cajas)
+                            {
+                                <tr data-fila>
+                                    <td>
+                                        <div class="celda-principal">
+                                            <span class="avatar-ep cuadrado av-azul"><i class="fas fa-trailer"></i></span>
+                                            <a class="nombre" href="@Url.Action("Detalle", "Cajas", new { id = k.IdCaja })">@k.NumeroCaja</a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (k.IdGrupoCuenta.HasValue)
+                                        {
+                                            <span class="pastilla pastilla-navy"><i class="fas fa-layer-group"></i>Grupo @k.GrupoCuenta</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pastilla pastilla-azul"><i class="fas fa-building"></i>Esta cuenta</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (k.IdTransportista.HasValue)
+                                        {
+                                            <a href="@Url.Action("Detalle", "Transportistas", new { id = k.IdTransportista })">@k.Transportista</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="texto-tenue">—</span>
+                                        }
+                                    </td>
+                                    <td class="small">@(k.Placa ?? "—")@(k.Vin != null ? " · " + k.Vin : "")</td>
+                                    <td class="small texto-secundario">@string.Join(" · ", new[] { k.Marca, k.Anio.HasValue ? k.Anio.Value.ToString() : null, k.Pies.HasValue ? k.Pies.Value + " ft" : null }.Where(x => x != null))</td>
+                                </tr>
+                            }
+                            <tr id="cajasCuentaVacio" style="display:none;"><td colspan="5" class="text-center texto-tenue py-4">Ninguna caja coincide con la búsqueda.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+            <div class="tarjeta-ep-pie d-flex flex-wrap gap-2">
+                <a class="btn-suave btn-sm-ep" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-plus"></i> Nueva caja</a>
+                @if (Model.IdGrupoCuenta.HasValue)
+                {
+                    <a class="btn-suave btn-sm-ep" href="@Url.Action("Index", "Cajas", new { idGrupoCuenta = Model.IdGrupoCuenta })"><i class="fas fa-list"></i> Ver en el listado de cajas</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

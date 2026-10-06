@@ -1,57 +1,158 @@
-@model EP360_Logistics_Admin.Models.EstadoBaseModel
+@model EP360_Logistics_Admin.Models.InicioModel
 @{
     ViewBag.Title = "Inicio";
+    var e = Model.Estado;
+    var sync = Model.UltimaSincronizacion;
+    string saludo = DateTime.Now.Hour < 12 ? "Buenos días" : DateTime.Now.Hour < 19 ? "Buenas tardes" : "Buenas noches";
+    string usuario = User.Identity.Name ?? "";
+    usuario = usuario.Contains("\\") ? usuario.Substring(usuario.IndexOf('\\') + 1) : usuario;
 }
 
-<h1 class="titulo-pagina">Directorio global</h1>
-<p class="subtitulo-pagina">Administración de personas, cuentas y grupos compartidos por los portales.</p>
+<section class="hero-ep">
+    <i class="fas fa-globe-americas hero-decoracion" aria-hidden="true"></i>
+    <h2>@saludo, @usuario</h2>
+    <p>Directorio global y flota compartidos por los portales de EP Logistics: personas, clientes, cajas, transportistas, tractores y choferes en un solo lugar.</p>
+    <div class="hero-meta">
+        @if (e.Conectado)
+        {
+            <span><i class="fas fa-circle" style="color:#4ade80;font-size:.55rem;"></i> Base en línea · @e.BaseDatos</span>
+            <span><i class="fas fa-server"></i> @e.Servidor</span>
+            <span><i class="fas fa-plug"></i> @e.PortalesActivos portales conectados</span>
+        }
+        else
+        {
+            <span><i class="fas fa-circle" style="color:#f87171;font-size:.55rem;"></i> Sin conexión con la base</span>
+        }
+        @if (sync != null)
+        {
+            <span><i class="fas fa-rotate"></i> Última sincronización AD: @sync.FechaInicio.ToString("dd/MM/yyyy HH:mm")</span>
+        }
+    </div>
+</section>
 
-<div class="rejilla-accesos">
-    <a class="acceso" href="@Url.Action("Index", "Personas")"><span class="icono-material" aria-hidden="true">group</span><strong>Personas</strong><span>Usuarios de AD, externos y contactos</span></a>
-    <a class="acceso" href="@Url.Action("Index", "Cuentas")"><span class="icono-material" aria-hidden="true">apartment</span><strong>Cuentas</strong><span>Cuentas de clientes y sus contactos</span></a>
-    <a class="acceso" href="@Url.Action("Index", "Grupos")"><span class="icono-material" aria-hidden="true">workspaces</span><strong>Grupos</strong><span>Grupos de cuentas por cliente</span></a>
-</div>
-
-@if (Model.Conectado)
+@if (!e.Conectado)
 {
-    <section class="tarjeta">
-        <div class="tarjeta-encabezado">
-            <span class="icono-material" aria-hidden="true">database</span>
-            <h2>Base de datos conectada</h2>
-            <span class="insignia insignia-ok">En línea</span>
+    <div class="tarjeta-ep">
+        <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-triangle-exclamation"></i> No se pudo leer la base global</h6></div>
+        <div class="tarjeta-ep-cuerpo">
+            <p class="mb-2">Verifica que se hayan corrido los scripts de <code>Database/</code> en el servidor 60 y que la cuenta de la aplicación tenga permiso de ejecución sobre <code>dir.sp_ObtenerEstadoBase</code>.</p>
+            <pre class="detalle-error">@e.Error</pre>
         </div>
-        <dl class="datos">
-            <div><dt>Base</dt><dd>@Model.BaseDatos</dd></div>
-            <div><dt>Servidor</dt><dd>@Model.Servidor</dd></div>
-            <div><dt>Edición</dt><dd>@Model.Edicion</dd></div>
-            <div><dt>Hora del servidor</dt><dd>@Model.FechaServidor.ToString("yyyy-MM-dd HH:mm:ss")</dd></div>
-            <div><dt>Tablas en dir / seg / sync</dt><dd>@Model.TablasDir / @Model.TablasSeg / @Model.TablasSync</dd></div>
-        </dl>
-    </section>
-
-    <section class="tarjeta">
-        <div class="tarjeta-encabezado">
-            <span class="icono-material" aria-hidden="true">apps</span>
-            <h2>Portales registrados (@Model.PortalesActivos)</h2>
-        </div>
-        <ul class="lista-portales">
-            @foreach (var portal in Model.Portales)
-            {
-                <li><strong>@portal.Clave</strong><span>@portal.Nombre</span></li>
-            }
-        </ul>
-    </section>
+    </div>
 }
 else
 {
-    <section class="tarjeta">
-        <div class="tarjeta-encabezado">
-            <span class="icono-material" aria-hidden="true">error</span>
-            <h2>No se pudo leer la base global</h2>
-            <span class="insignia insignia-error">Sin conexión</span>
+    if (Model.ErrorIndicadores != null)
+    {
+        <div class="aviso-ep aviso-ambar mb-3"><i class="fas fa-triangle-exclamation"></i><div>Algunos indicadores no se pudieron calcular: @Model.ErrorIndicadores</div></div>
+    }
+
+    <h6 class="seccion-titulo">Directorio</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-users"></i></div><div class="kpi-tile-etiqueta">Personas</div><div class="kpi-tile-valor">@Model.PersonasActivas.ToString("N0")</div><span class="kpi-tile-detalle">activas</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "AD" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fab fa-windows"></i></div><div class="kpi-tile-etiqueta">Usuarios AD</div><div class="kpi-tile-valor">@Model.UsuariosAD.ToString("N0")</div><span class="kpi-tile-detalle">del dominio</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Externos</div><div class="kpi-tile-valor">@Model.UsuariosExternos.ToString("N0")</div><span class="kpi-tile-detalle">con contraseña propia</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "Contacto" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-address-card"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@Model.Contactos.ToString("N0")</div><span class="kpi-tile-detalle">de clientes</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cuentas")"><div class="kpi-tile-icono" style="--kpi-color:#0f4c9e;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">Cuentas</div><div class="kpi-tile-valor">@Model.CuentasActivas.ToString("N0")</div><span class="kpi-tile-detalle">@Model.CuentasSinGrupo.ToString("N0") sin grupo</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Grupos")"><div class="kpi-tile-icono" style="--kpi-color:#0891b2;"><i class="fas fa-layer-group"></i></div><div class="kpi-tile-etiqueta">Grupos</div><div class="kpi-tile-valor">@Model.GruposActivos.ToString("N0")</div><span class="kpi-tile-detalle">de cuentas</span></a></div>
+    </div>
+
+    <h6 class="seccion-titulo">Flota</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cajas")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@Model.CajasActivas.ToString("N0")</div><span class="kpi-tile-detalle">activas</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cajas", new { tipoPropiedad = "Cliente" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">De cliente</div><div class="kpi-tile-valor">@Model.CajasCliente.ToString("N0")</div><span class="kpi-tile-detalle">@Model.CajasTransportista.ToString("N0") de transportista · @Model.CajasEP.ToString("N0") EP</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Transportistas")"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@Model.TransportistasActivos.ToString("N0")</div><span class="kpi-tile-detalle">líneas activas</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Tractores")"><div class="kpi-tile-icono" style="--kpi-color:#475569;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores</div><div class="kpi-tile-valor">@Model.TractoresActivos.ToString("N0")</div><span class="kpi-tile-detalle">activos</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Choferes")"><div class="kpi-tile-icono" style="--kpi-color:#16a34a;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes</div><div class="kpi-tile-valor">@Model.ChoferesActivos.ToString("N0")</div><span class="kpi-tile-detalle">activos</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Choferes")"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Multilínea</div><div class="kpi-tile-valor">@Model.ChoferesVariosTransportistas.ToString("N0")</div><span class="kpi-tile-detalle">choferes con 2+ transportistas</span></a></div>
+    </div>
+
+    <div class="row g-3 mb-2">
+        <div class="col-lg-4">
+            <div class="tarjeta-ep h-100 mb-0">
+                <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-trailer"></i> Clientes con más cajas</h6></div>
+                <div class="tarjeta-ep-cuerpo">
+                    @Barras(Model.CajasPorGrupo, b => b.Id.HasValue ? Url.Action("Detalle", "Grupos", new { id = b.Id }) : Url.Action("Index", "Cajas"), "Todavía no hay cajas de cliente.")
+                </div>
+            </div>
         </div>
-        <p>Verifica que se haya corrido <code>Database/01_CrearBaseYEsquemas.sql</code> en el servidor 60 y que
-        la cuenta de la aplicación tenga permiso de ejecución sobre <code>dir.sp_ObtenerEstadoBase</code>.</p>
-        <pre class="detalle-error">@Model.Error</pre>
-    </section>
+        <div class="col-lg-4">
+            <div class="tarjeta-ep h-100 mb-0">
+                <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-truck-fast"></i> Transportistas con más choferes</h6></div>
+                <div class="tarjeta-ep-cuerpo">
+                    @Barras(Model.TransportistasPorChoferes, b => Url.Action("Detalle", "Transportistas", new { id = b.Id }), "Todavía no hay transportistas.")
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="tarjeta-ep h-100 mb-0">
+                <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-location-dot"></i> Personas por sucursal</h6></div>
+                <div class="tarjeta-ep-cuerpo">
+                    @Barras(Model.PersonasPorSucursal, b => Url.Action("Index", "Personas", new { idSucursal = b.Id }), "Sin datos.")
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="seccion-titulo mt-4">Accesos rápidos</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Personas")"><span class="acceso-icono"><i class="fas fa-user-plus"></i></span><span><strong>Dar de alta una persona</strong><small>Contacto o usuario externo</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Cajas")"><span class="acceso-icono"><i class="fas fa-trailer"></i></span><span><strong>Registrar una caja</strong><small>De cliente, transportista o EP</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Choferes")"><span class="acceso-icono"><i class="fas fa-id-card"></i></span><span><strong>Dar de alta un chofer</strong><small>Y ligarlo a sus transportistas</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Index", "Sincronizacion")"><span class="acceso-icono"><i class="fas fa-rotate"></i></span><span><strong>Sincronizar con AD</strong><small>@(sync != null ? "Última: " + sync.FechaInicio.ToString("dd/MM HH:mm") + " · " + sync.Estado : "Nunca se ha corrido")</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="tarjeta-ep h-100 mb-0">
+                <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-database"></i> Base de datos conectada</h6><span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>En línea</span></div>
+                <div class="tarjeta-ep-cuerpo">
+                    <dl class="datos-ep">
+                        <div><dt>Base</dt><dd>@e.BaseDatos</dd></div>
+                        <div><dt>Servidor</dt><dd>@e.Servidor</dd></div>
+                        <div><dt>Edición</dt><dd>@e.Edicion</dd></div>
+                        <div><dt>Hora del servidor</dt><dd>@e.FechaServidor.ToString("yyyy-MM-dd HH:mm:ss")</dd></div>
+                        <div><dt>Tablas dir / seg / sync</dt><dd>@e.TablasDir / @e.TablasSeg / @e.TablasSync</dd></div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="tarjeta-ep h-100 mb-0">
+                <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-plug"></i> Portales registrados <span class="contador">@e.PortalesActivos</span></h6></div>
+                <div class="tarjeta-ep-cuerpo p-0">
+                    <table class="tabla-ep">
+                        <tbody>
+                            @foreach (var portal in e.Portales)
+                            {
+                                <tr><td style="width:120px;"><span class="pastilla pastilla-navy">@portal.Clave</span></td><td>@portal.Nombre</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@helper Barras(System.Collections.Generic.List<EP360_Logistics_Admin.Models.BarraModel> barras, Func<EP360_Logistics_Admin.Models.BarraModel, string> url, string vacio)
+{
+    if (barras.Count == 0)
+    {
+        <p class="texto-tenue mb-0">@vacio</p>
+    }
+    else
+    {
+        int maximo = Math.Max(1, barras.Max(b => b.Valor));
+        <div class="barras-ep">
+            @foreach (var b in barras)
+            {
+                <a class="barra-ep-fila" href="@url(b)" style="color:inherit;">
+                    <span class="etiqueta" title="@b.Etiqueta">@b.Etiqueta</span>
+                    <span class="barra-ep-pista"><span class="barra-ep-relleno d-block" style="width:@((b.Valor * 100 / maximo).ToString())%;"></span></span>
+                    <span class="valor">@b.Valor.ToString("N0")</span>
+                </a>
+            }
+        </div>
+    }
 }

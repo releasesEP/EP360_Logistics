@@ -1,0 +1,332 @@
+@model EP360_Logistics_Admin.Models.TransportistaModel
+@{
+    ViewBag.Title = Model.Nombre;
+    var tractores = (List<TractorModel>)ViewBag.Tractores;
+    var choferes = (List<ChoferModel>)ViewBag.Choferes;
+    var cajas = (List<CajaModel>)ViewBag.Cajas;
+    var vinculables = (List<SelectListItem>)ViewBag.ChoferesVinculables;
+    int tractoresActivos = tractores.Count(t => t.Activo);
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver a transportistas" aria-label="Volver a transportistas"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-truck-fast"></i>Ficha del transportista</h3>
+            <p>Sus tractores, los choferes que trabajan con la línea y las cajas que mueve.</p>
+        </div>
+    </div>
+</div>
+
+<div class="perfil-cabecera">
+    <span class="avatar-ep grande cuadrado @(Model.Activo ? "av-ambar" : "av-gris")">@TextoUtil.Iniciales(Model.Nombre)</span>
+    <div class="perfil-info">
+        <h3>
+            @Model.Nombre
+            @if (Model.Activo)
+            {
+                <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
+            }
+            else
+            {
+                <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+            }
+        </h3>
+        <div class="perfil-meta">
+            <span><i class="fas fa-hashtag"></i>@Model.Folio</span>
+            @if (Model.RazonSocial != null)
+            {
+                <span><i class="fas fa-file-signature"></i>@Model.RazonSocial</span>
+            }
+            @if (Model.Rfc != null)
+            {
+                <span><i class="fas fa-id-badge"></i>RFC @Model.Rfc</span>
+            }
+            @if (Model.IdCuenta.HasValue)
+            {
+                <span><i class="fas fa-building"></i><a href="@Url.Action("Detalle", "Cuentas", new { id = Model.IdCuenta.Value })">@Model.Cuenta</a></span>
+            }
+        </div>
+    </div>
+    <div class="perfil-acciones">
+        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdTransportista })"><i class="fas fa-pen"></i> Editar</a>
+        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Transportistas", new { id = Model.IdTransportista }, FormMethod.Post, new
+        {
+            data_confirmar = Model.Activo ? "¿Desactivar " + Model.Nombre + "?" : "¿Reactivar " + Model.Nombre + "?",
+            data_confirmar_detalle = Model.Activo ? "Se darán de baja sus tractores y cajas propias, y se cerrarán sus ligas con choferes (los choferes siguen activos)." : "Sus tractores, cajas y choferes se reactivan uno por uno.",
+            data_confirmar_tipo = Model.Activo ? "peligro" : "normal",
+            data_confirmar_boton = Model.Activo ? "Sí, desactivar" : "Sí, reactivar"
+        }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="@(Model.Activo ? "btn-peligro-suave" : "btn-exito-suave")"><i class="fas @(Model.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(Model.Activo ? "Desactivar" : "Reactivar")</button>
+        }
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes</div><div class="kpi-tile-valor">@choferes.Count</div><span class="kpi-tile-detalle">Con liga activa</span></div></div>
+    <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#475569;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores activos</div><div class="kpi-tile-valor">@tractoresActivos<small>de @tractores.Count</small></div></div></div>
+    <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@cajas.Count</div><span class="kpi-tile-detalle">Propias o que mueve habitualmente</span></div></div>
+</div>
+
+<ul class="nav pestanas-ep" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pestana-tractores" type="button" role="tab"><i class="fas fa-truck"></i> Tractores <span class="contador">@tractores.Count</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pestana-choferes" type="button" role="tab"><i class="fas fa-id-card"></i> Choferes <span class="contador">@choferes.Count</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pestana-cajas" type="button" role="tab"><i class="fas fa-trailer"></i> Cajas <span class="contador">@cajas.Count</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pestana-datos" type="button" role="tab"><i class="fas fa-circle-info"></i> Datos</button></li>
+</ul>
+
+<div class="tab-content">
+    @* ---------- Tractores ---------- *@
+    <div class="tab-pane fade show active" id="pestana-tractores" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-truck"></i> Tractores <span class="contador">@tractoresActivos activos</span></h6>
+                <div class="listado-buscar" style="flex:0 1 280px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar económico, placa o VIN..." data-filtrar-tabla="#tablaTractores" data-filtrar-vacio="#vacioTractores" /></div>
+                @if (Model.Activo)
+                {
+                    <a class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Tractores", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Agregar tractor</a>
+                }
+            </div>
+            @if (tractores.Count == 0)
+            {
+                <div class="vacio-ep"><div class="vacio-icono"><i class="fas fa-truck"></i></div><h6>Sin tractores</h6><p>Este transportista no tiene tractores registrados.</p></div>
+            }
+            else
+            {
+                <table class="tabla-ep" id="tablaTractores">
+                    <thead><tr><th>Económico</th><th>Placa</th><th>VIN</th><th>Año / marca</th><th>Estado</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var t in tractores)
+                        {
+                            <tr data-fila class="@(t.Activo ? "" : "inactiva")">
+                                <td><div class="celda-principal"><span class="avatar-ep cuadrado @(t.Activo ? "" : "av-gris")"><i class="fas fa-truck"></i></span><a class="nombre" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })">@t.Economico</a></div></td>
+                                <td>@(t.Placa ?? "—")</td>
+                                <td class="small">@(t.Vin ?? "—")</td>
+                                <td>@(t.Anio.HasValue ? t.Anio.Value.ToString() : "")@(t.Anio.HasValue && t.Marca != null ? " · " : "")@t.Marca@(!t.Anio.HasValue && t.Marca == null ? "—" : "")</td>
+                                <td>
+                                    @if (t.Activo)
+                                    {
+                                        <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+                                    }
+                                </td>
+                                <td class="celda-acciones">
+                                    <a class="btn-icono" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })" title="Editar"><i class="fas fa-pen"></i></a>
+                                    @if (Model.Activo)
+                                    {
+                                        using (Html.BeginForm(t.Activo ? "Desactivar" : "Reactivar", "Tractores", new { id = t.IdTractor }, FormMethod.Post, new
+                                        {
+                                            @class = "d-inline",
+                                            data_confirmar = t.Activo ? "¿Desactivar el tractor " + t.Economico + "?" : "¿Reactivar el tractor " + t.Economico + "?",
+                                            data_confirmar_tipo = t.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = t.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@(Url.Action("Detalle", new { id = Model.IdTransportista }) + "#pestana-tractores")" />
+                                            <button type="submit" class="btn-icono" title="@(t.Activo ? "Desactivar" : "Reactivar")"><i class="fas @(t.Activo ? "fa-ban" : "fa-rotate-left")"></i></button>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="vacio-ep" id="vacioTractores" style="display:none;"><p>Ningún tractor coincide con la búsqueda.</p></div>
+            }
+        </div>
+    </div>
+
+    @* ---------- Choferes ---------- *@
+    <div class="tab-pane fade" id="pestana-choferes" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-id-card"></i> Choferes ligados <span class="contador">@choferes.Count</span></h6>
+                <div class="listado-buscar" style="flex:0 1 280px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar nombre o licencia..." data-filtrar-tabla="#tablaChoferes" data-filtrar-vacio="#vacioChoferes" /></div>
+                @if (Model.Activo)
+                {
+                    <a class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Choferes", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Chofer nuevo</a>
+                }
+            </div>
+            @if (choferes.Count == 0)
+            {
+                <div class="vacio-ep"><div class="vacio-icono"><i class="fas fa-id-card"></i></div><h6>Sin choferes</h6><p>Ningún chofer está ligado a este transportista.</p></div>
+            }
+            else
+            {
+                <table class="tabla-ep" id="tablaChoferes">
+                    <thead><tr><th>Chofer</th><th>Licencia</th><th>Trabaja también con</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in choferes)
+                        {
+                            var otros = (c.Transportistas ?? "").Split(new[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Where(n => n != Model.Nombre).ToList();
+                            <tr data-fila>
+                                <td>
+                                    <div class="celda-principal">
+                                        <span class="avatar-ep">@TextoUtil.Iniciales(c.NombreCompleto)</span>
+                                        <div style="min-width:0;">
+                                            <a class="nombre" href="@Url.Action("Detalle", "Choferes", new { id = c.IdChofer })">@c.NombreCompleto</a>
+                                            <span class="sub">@(c.Telefono ?? "Sin teléfono")</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@(c.Licencia ?? "—")</td>
+                                <td>
+                                    @if (otros.Count == 0)
+                                    {
+                                        <span class="texto-tenue">Solo esta línea</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="lista-pastillas">
+                                            @foreach (var o in otros)
+                                            {
+                                                <span class="pastilla pastilla-navy">@o</span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                                <td class="celda-acciones">
+                                    @using (Html.BeginForm("DesvincularChofer", "Transportistas", FormMethod.Post, new
+                                    {
+                                        @class = "d-inline",
+                                        data_confirmar = "¿Quitar a " + c.NombreCompleto + " de " + Model.Nombre + "?",
+                                        data_confirmar_detalle = "Se cierra la liga con fecha de hoy y queda en su historial. El chofer sigue activo.",
+                                        data_confirmar_boton = "Sí, quitar"
+                                    }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idTransportista" value="@Model.IdTransportista" />
+                                        <input type="hidden" name="idChofer" value="@c.IdChofer" />
+                                        <button type="submit" class="btn-peligro-suave btn-sm-ep"><i class="fas fa-link-slash"></i> Quitar de este transportista</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="vacio-ep" id="vacioChoferes" style="display:none;"><p>Ningún chofer coincide con la búsqueda.</p></div>
+            }
+            @if (Model.Activo)
+            {
+                <div class="tarjeta-ep-pie">
+                    @using (Html.BeginForm("VincularChofer", "Transportistas", FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTransportista" value="@Model.IdTransportista" />
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold texto-secundario mb-1" for="filtroVinculables">Ligar chofer existente</label>
+                            <input type="search" id="filtroVinculables" class="form-control" placeholder="Filtra por nombre o licencia..." autocomplete="off" />
+                        </div>
+                        <div class="col-md-5">
+                            <select name="idChofer" id="selectVinculables" class="form-select" aria-label="Chofer">
+                                <option value="">Elige un chofer… (@vinculables.Count disponibles)</option>
+                                @foreach (var v in vinculables)
+                                {
+                                    <option value="@v.Value">@v.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn-corporativo w-100"><i class="fas fa-link"></i> Ligar</button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ---------- Cajas ---------- *@
+    <div class="tab-pane fade" id="pestana-cajas" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-trailer"></i> Cajas <span class="contador">@cajas.Count</span></h6>
+                <a class="btn-suave btn-sm-ep" href="@Url.Action("Index", "Cajas", new { idTransportista = Model.IdTransportista })"><i class="fas fa-up-right-from-square"></i> Ver en Cajas</a>
+            </div>
+            @if (cajas.Count == 0)
+            {
+                <div class="vacio-ep"><div class="vacio-icono"><i class="fas fa-trailer"></i></div><h6>Sin cajas</h6><p>Este transportista no tiene cajas propias ni mueve cajas de clientes.</p></div>
+            }
+            else
+            {
+                <table class="tabla-ep">
+                    <thead><tr><th>Caja</th><th>Relación</th><th>Propietario</th><th>Placa</th></tr></thead>
+                    <tbody>
+                        @foreach (var k in cajas)
+                        {
+                            <tr>
+                                <td><div class="celda-principal"><span class="avatar-ep cuadrado av-azul"><i class="fas fa-trailer"></i></span><a class="nombre" href="@Url.Action("Detalle", "Cajas", new { id = k.IdCaja })">@k.NumeroCaja</a></div></td>
+                                <td>
+                                    @if (k.TipoPropiedad == "Transportista")
+                                    {
+                                        <span class="pastilla pastilla-ambar"><i class="fas fa-key"></i>Propia</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="pastilla pastilla-azul"><i class="fas fa-route"></i>La mueve habitualmente</span>
+                                    }
+                                </td>
+                                <td>@k.Propietario</td>
+                                <td>@(k.Placa ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    @* ---------- Datos ---------- *@
+    <div class="tab-pane fade" id="pestana-datos" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-circle-info"></i> Datos del transportista</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <dl class="datos-ep">
+                    <div><dt>Folio</dt><dd>@Model.Folio</dd></div>
+                    <div><dt>Nombre</dt><dd>@Model.Nombre</dd></div>
+                    <div><dt>Razón social</dt>@if (Model.RazonSocial != null) { <dd>@Model.RazonSocial</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div><dt>RFC</dt>@if (Model.Rfc != null) { <dd>@Model.Rfc</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div>
+                        <dt>Cuenta del directorio</dt>
+                        @if (Model.IdCuenta.HasValue)
+                        {
+                            <dd><a href="@Url.Action("Detalle", "Cuentas", new { id = Model.IdCuenta.Value })">@Model.Cuenta</a></dd>
+                        }
+                        else
+                        {
+                            <dd class="vacio">No es cuenta del directorio</dd>
+                        }
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        // Filtra las opciones del select de choferes vinculables (son muchos para recorrerlos a mano).
+        (function () {
+            var filtro = document.getElementById("filtroVinculables");
+            var select = document.getElementById("selectVinculables");
+            if (!filtro || !select) return;
+            var plano = function (s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
+            filtro.addEventListener("input", function () {
+                var q = plano(filtro.value.trim()), primero = null;
+                Array.prototype.forEach.call(select.options, function (o, i) {
+                    if (i === 0) return;
+                    var ver = !q || plano(o.text).indexOf(q) >= 0;
+                    o.hidden = !ver;
+                    if (ver && !primero) primero = o;
+                });
+                select.value = q && primero ? primero.value : "";
+            });
+        })();
+    </script>
+}

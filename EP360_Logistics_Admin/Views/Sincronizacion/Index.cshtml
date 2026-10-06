@@ -1,68 +1,133 @@
 @model System.Collections.Generic.List<EP360_Logistics_Admin.Models.SincronizacionADModel>
 @{
     ViewBag.Title = "Sincronización con AD";
+    var ultima = Model.FirstOrDefault();
+    Func<SincronizacionADModel, string> duracion = s => s.FechaFin.HasValue
+        ? ((int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds >= 60
+            ? ((int)(s.FechaFin.Value - s.FechaInicio).TotalMinutes) + " min " + ((int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds % 60) + " s"
+            : ((int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds) + " s")
+        : "—";
+    Func<string, string> pastillaEstado = estado => estado == "Terminada" ? "pastilla-verde" : estado == "EnCurso" ? "pastilla-azul" : estado == "ConErrores" ? "pastilla-ambar" : "pastilla-rojo";
 }
 
-<div class="encabezado-pagina">
-    <div>
-        <h1 class="titulo-pagina">Sincronización con Active Directory</h1>
-        <p class="subtitulo-pagina">Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-rotate"></i>Sincronización con Active Directory</h3>
+            <p>Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+        </div>
     </div>
-    @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new { id = "form-sincronizar" }))
-    {
-        @Html.AntiForgeryToken()
-        <button type="submit" id="boton-sincronizar" class="boton boton-primario"><span class="icono-material" aria-hidden="true">sync</span> Sincronizar ahora</button>
-    }
+    <div class="encabezado-acciones">
+        <a class="btn-suave" href="@Url.Action("Index", "Personas", new { tipo = "AD" })"><i class="fas fa-users"></i> Ver usuarios de AD</a>
+        @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new
+        {
+            id = "form-sincronizar",
+            data_confirmar = "¿Sincronizar ahora con Active Directory?",
+            data_confirmar_detalle = "Se leen todos los usuarios del dominio. Puede tardar un par de minutos; no cierres la página mientras corre.",
+            data_confirmar_tipo = "normal",
+            data_confirmar_boton = "Sí, sincronizar"
+        }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" id="boton-sincronizar" class="btn-corporativo"><i class="fas fa-rotate"></i> Sincronizar ahora</button>
+        }
+    </div>
 </div>
 
-<section class="tarjeta">
-    <ul class="lista-notas">
-        <li>Se leen todos los usuarios del dominio. <strong>Aparecen en el directorio solo si cumplen todo:</strong> cuenta activa, puesto, departamento, oficina, compañía y jefe asignados en AD.</li>
-        <li>Se excluyen siempre las cuentas de sistema (HealthMailbox, SystemMailbox, DiscoverySearchMailbox, etc.).</li>
-        <li>Un usuario nuevo que no cumple no se crea. Uno que ya estaba y deja de cumplir se da de baja lógica; si vuelve a cumplir, se reactiva.</li>
-        <li>El puesto, el departamento y la oficina vienen de AD y se actualizan en cada sincronización.</li>
-        <li>Si el correo o el nombre de usuario chocan con otra persona, ese usuario se salta y queda en el detalle de errores; los demás siguen.</li>
-        <li>Puede tardar un par de minutos. No cierres la página mientras corre.</li>
-    </ul>
-</section>
-
-<section class="tarjeta tarjeta-tabla">
-    <table class="tabla">
-        <thead>
-            <tr><th>#</th><th>Inicio</th><th>Duración</th><th>Por</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualiz.</th><th class="num">Omitidos</th><th class="num">Errores</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var s in Model)
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="kpi-tile">
+            <div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-clock-rotate-left"></i></div>
+            <div class="kpi-tile-etiqueta">Última corrida</div>
+            <div class="kpi-tile-valor" style="font-size:1.3rem;padding:6px 0 2px;">@(ultima != null ? ultima.FechaInicio.ToString("dd/MM/yyyy HH:mm") : "Nunca")</div>
+            @if (ultima != null)
             {
-                <tr>
-                    <td>@s.IdSincronizacion</td>
-                    <td>@s.FechaInicio.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>@(s.FechaFin.HasValue ? ((int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds) + " s" : "—")</td>
-                    <td>@s.EjecutadoPor</td>
-                    <td><span class="insignia @(s.Estado == "Terminada" ? "insignia-ok" : (s.Estado == "EnCurso" ? "" : "insignia-error"))">@s.Estado</span></td>
-                    <td class="num">@s.Leidos</td>
-                    <td class="num">@s.Altas</td>
-                    <td class="num">@s.Actualizaciones</td>
-                    <td class="num">@s.Omitidos</td>
-                    <td class="num">@s.Errores</td>
-                </tr>
-                if (!string.IsNullOrEmpty(s.DetalleErrores))
-                {
-                    <tr><td colspan="10"><details><summary>Ver detalle de errores (#@s.IdSincronizacion)</summary><pre class="detalle-error">@s.DetalleErrores</pre></details></td></tr>
-                }
+                <span class="pastilla @pastillaEstado(ultima.Estado) mt-1">@ultima.Estado</span>
             }
+        </div>
+    </div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-users-viewfinder"></i></div><div class="kpi-tile-etiqueta">Leídos</div><div class="kpi-tile-valor">@(ultima != null ? ultima.Leidos.ToString("N0") : "—")</div><span class="kpi-tile-detalle">usuarios del dominio</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#16a34a;"><i class="fas fa-user-plus"></i></div><div class="kpi-tile-etiqueta">Altas / actualizados</div><div class="kpi-tile-valor">@(ultima != null ? ultima.Altas + " / " + ultima.Actualizaciones : "—")</div><span class="kpi-tile-detalle">en la última corrida</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-triangle-exclamation"></i></div><div class="kpi-tile-etiqueta">Omitidos / errores</div><div class="kpi-tile-valor">@(ultima != null ? ultima.Omitidos + " / " + ultima.Errores : "—")</div><span class="kpi-tile-detalle">@(ultima != null ? "duró " + duracion(ultima) : "")</span></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-clock-rotate-left"></i> Historial <span class="contador">@Model.Count</span></h6><p>Las últimas 20 corridas.</p></div>
             @if (Model.Count == 0)
             {
-                <tr><td colspan="10" class="vacio">Todavía no se ha sincronizado.</td></tr>
+                <div class="vacio-ep">
+                    <div class="vacio-icono"><i class="fas fa-rotate"></i></div>
+                    <h6>Todavía no se ha sincronizado</h6>
+                    <p>Usa "Sincronizar ahora" para traer los usuarios del dominio.</p>
+                </div>
             }
-        </tbody>
-    </table>
-</section>
+            else
+            {
+                <div class="table-responsive">
+                    <table class="tabla-ep">
+                        <thead>
+                            <tr><th>#</th><th>Inicio</th><th>Duración</th><th>Por</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualiz.</th><th class="num">Omitidos</th><th class="num">Errores</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model)
+                            {
+                                <tr>
+                                    <td class="texto-tenue">@s.IdSincronizacion</td>
+                                    <td class="fw-semibold">@s.FechaInicio.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@duracion(s)</td>
+                                    <td class="small">@s.EjecutadoPor</td>
+                                    <td><span class="pastilla @pastillaEstado(s.Estado)">@s.Estado</span></td>
+                                    <td class="num">@s.Leidos</td>
+                                    <td class="num">@s.Altas</td>
+                                    <td class="num">@s.Actualizaciones</td>
+                                    <td class="num">@s.Omitidos</td>
+                                    <td class="num @(s.Errores > 0 ? "text-danger fw-bold" : "")">@s.Errores</td>
+                                </tr>
+                                if (!string.IsNullOrEmpty(s.DetalleErrores))
+                                {
+                                    <tr>
+                                        <td colspan="10" style="background:var(--bg-page);">
+                                            <details>
+                                                <summary class="small fw-semibold" style="cursor:pointer;"><i class="fas fa-bug me-1"></i>Ver detalle de errores de la corrida #@s.IdSincronizacion</summary>
+                                                <pre class="detalle-error">@s.DetalleErrores</pre>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-list-check"></i> Reglas</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-3 small">
+                    <li class="d-flex gap-2"><i class="fas fa-filter text-primary mt-1"></i><span><b>Aparecen en el directorio solo si cumplen todo:</b> cuenta activa, puesto, departamento, oficina, compañía y jefe asignados en AD.</span></li>
+                    <li class="d-flex gap-2"><i class="fas fa-robot text-primary mt-1"></i><span>Se excluyen siempre las cuentas de sistema (HealthMailbox, SystemMailbox, DiscoverySearchMailbox, etc.).</span></li>
+                    <li class="d-flex gap-2"><i class="fas fa-user-clock text-primary mt-1"></i><span>Un usuario nuevo que no cumple no se crea. Uno que ya estaba y deja de cumplir se da de baja lógica; si vuelve a cumplir, se reactiva.</span></li>
+                    <li class="d-flex gap-2"><i class="fas fa-arrows-rotate text-primary mt-1"></i><span>El puesto, el departamento y la oficina vienen de AD y se actualizan en cada sincronización.</span></li>
+                    <li class="d-flex gap-2"><i class="fas fa-code-merge text-primary mt-1"></i><span>Si el correo o el usuario chocan con otra persona, ese usuario se salta y queda en el detalle de errores; los demás siguen.</span></li>
+                </ul>
+            </div>
+            <div class="tarjeta-ep-pie small texto-secundario"><i class="fas fa-hourglass-half me-1"></i>Puede tardar un par de minutos. No cierres la página mientras corre.</div>
+        </div>
+    </div>
+</div>
 
-<script>
-    // Evita doble clic mientras corre la sincronizacion.
-    document.getElementById("form-sincronizar").addEventListener("submit", function () {
-        var b = document.getElementById("boton-sincronizar");
-        b.disabled = true; b.textContent = "Sincronizando…";
-    });
-</script>
+@section scripts {
+    <script>
+        // Evita doble clic mientras corre la sincronizacion (el envio real ocurre despues de confirmar).
+        document.getElementById("form-sincronizar").addEventListener("submit", function () {
+            var b = document.getElementById("boton-sincronizar");
+            b.disabled = true;
+            b.innerHTML = '<span class="cargando-ep"></span> Sincronizando…';
+        });
+    </script>
+}

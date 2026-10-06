@@ -1,0 +1,186 @@
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.CajaModel>
+@{
+    ViewBag.Title = "Cajas";
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string estado = ViewBag.Estado;
+    bool sinTransportista = ViewBag.SinTransportistaFiltro;
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-trailer"></i>Cajas</h3>
+            <p>Trailers de clientes (ligados a un grupo de cuentas o a una cuenta), de transportistas y propios de EP.</p>
+        </div>
+    </div>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nueva caja</a>
+    </div>
+</div>
+
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas activas</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivas).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipoPropiedad = "Cliente" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">De cliente</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalCliente).ToString("N0"))</div><span class="kpi-tile-detalle">Ligadas a un grupo o cuenta</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipoPropiedad = "Transportista" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">De transportista</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalTransportista).ToString("N0"))</div><span class="kpi-tile-detalle">Propiedad de la línea</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipoPropiedad = "EP" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-warehouse"></i></div><div class="kpi-tile-etiqueta">Propias de EP</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalEP).ToString("N0"))</div><span class="kpi-tile-detalle">Trailers de EP Logistics</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { sinTransportista = true })"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-circle-question"></i></div><div class="kpi-tile-etiqueta">Sin transportista</div><div class="kpi-tile-valor">@(((int)ViewBag.SinTransportista).ToString("N0"))</div><span class="kpi-tile-detalle">Activas sin transportista habitual</span></a></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="tipoPropiedad" value="@enc.PestanaActiva" />
+        <input type="hidden" name="orden" value="@Request.QueryString["orden"]" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por número, placa, VIN, propietario o transportista..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        <select name="estado" class="form-select form-select-sm" aria-label="Estado">
+            <option value="activos" @(estado == "activos" ? "selected" : "")>Activas</option>
+            <option value="inactivos" @(estado == "inactivos" ? "selected" : "")>Inactivas</option>
+            <option value="todos" @(estado == "todos" ? "selected" : "")>Activas e inactivas</option>
+        </select>
+        @Html.DropDownList("idGrupoCuenta", (IEnumerable<SelectListItem>)ViewBag.Grupos, "Todos los grupos", new { @class = "form-select form-select-sm" })
+        @Html.DropDownList("idTransportista", (IEnumerable<SelectListItem>)ViewBag.Transportistas, "Todos los transportistas", new { @class = "form-select form-select-sm" })
+        <label class="listado-interruptor @(sinTransportista ? "activo" : "")">
+            <input type="checkbox" name="sinTransportista" value="true" @(sinTransportista ? "checked" : "") />
+            <i class="fas fa-circle-question"></i> Sin transportista habitual
+        </label>
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-trailer"></i></div>
+            <h6>No hay cajas con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Caja", "numero")
+                        @Html.ColumnaOrden("Propiedad", "tipo")
+                        @Html.ColumnaOrden("Propietario", "propietario")
+                        @Html.ColumnaOrden("Transportista habitual", "transportista")
+                        <th>Datos</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var k in Model.Items)
+                    {
+                        string colorAvatar = !k.Activo ? "av-gris" : k.TipoPropiedad == "Cliente" ? "av-azul" : k.TipoPropiedad == "Transportista" ? "av-ambar" : "av-morado";
+                        <tr class="@(k.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep cuadrado @colorAvatar"><i class="fas fa-trailer"></i></span>
+                                    <div style="min-width:0;">
+                                        <a class="nombre" href="@Url.Action("Detalle", new { id = k.IdCaja })">@k.NumeroCaja</a>
+                                        <span class="sub">@(k.Placa != null ? "Placa " + k.Placa : (k.Vin != null ? "VIN " + k.Vin : "Sin placa ni VIN"))</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if (k.TipoPropiedad == "Cliente")
+                                {
+                                    <span class="pastilla pastilla-azul"><i class="fas fa-building"></i>@(k.IdGrupoCuenta.HasValue ? "Cliente · grupo" : "Cliente · cuenta")</span>
+                                }
+                                else if (k.TipoPropiedad == "Transportista")
+                                {
+                                    <span class="pastilla pastilla-ambar"><i class="fas fa-truck-fast"></i>Transportista</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-morado"><i class="fas fa-warehouse"></i>EP</span>
+                                }
+                            </td>
+                            <td>
+                                @if (k.IdGrupoCuenta.HasValue)
+                                {
+                                    <a href="@Url.Action("Detalle", "Grupos", new { id = k.IdGrupoCuenta.Value })" class="fw-semibold">@k.GrupoCuenta</a>
+                                }
+                                else if (k.IdCuenta.HasValue)
+                                {
+                                    <a href="@Url.Action("Detalle", "Cuentas", new { id = k.IdCuenta.Value })" class="fw-semibold">@k.Cuenta</a>
+                                }
+                                else if (k.TipoPropiedad == "Transportista" && k.IdTransportista.HasValue)
+                                {
+                                    <a href="@Url.Action("Detalle", "Transportistas", new { id = k.IdTransportista.Value })" class="fw-semibold">@k.Transportista</a>
+                                }
+                                else
+                                {
+                                    <span class="fw-semibold">@k.Propietario</span>
+                                }
+                            </td>
+                            <td>
+                                @if (k.TipoPropiedad != "Transportista" && k.IdTransportista.HasValue)
+                                {
+                                    <a href="@Url.Action("Detalle", "Transportistas", new { id = k.IdTransportista.Value })">@k.Transportista</a>
+                                }
+                                else if (k.TipoPropiedad == "Transportista")
+                                {
+                                    <span class="texto-tenue small">Es la dueña</span>
+                                }
+                                else
+                                {
+                                    <span class="texto-tenue">—</span>
+                                }
+                            </td>
+                            <td class="small">@(string.IsNullOrEmpty(k.Resumen) ? "—" : k.Resumen)</td>
+                            <td>
+                                @if (k.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Detalle", new { id = k.IdCaja })"><i class="fas fa-eye"></i> Ver ficha</a>
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = k.IdCaja })"><i class="fas fa-pen"></i> Editar</a>
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(k.Activo ? "Desactivar" : "Reactivar", "Cajas", new { id = k.IdCaja }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = k.Activo ? "¿Desactivar la caja " + k.NumeroCaja + "?" : "¿Reactivar la caja " + k.NumeroCaja + "?",
+                                            data_confirmar_detalle = k.Activo ? "Dejará de aparecer en los portales. Puedes reactivarla cuando quieras." : "Su propietario debe seguir activo.",
+                                            data_confirmar_tipo = k.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = k.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(k.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(k.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(k.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)

@@ -1,0 +1,126 @@
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.TractorModel>
+@{
+    ViewBag.Title = "Tractores";
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-truck"></i>Tractores</h3>
+            <p>Cada tractor pertenece a un transportista; el económico es su número interno dentro de la línea.</p>
+        </div>
+    </div>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo tractor</a>
+    </div>
+</div>
+
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores activos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivos).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-id-badge"></i></div><div class="kpi-tile-etiqueta">Sin placa</div><div class="kpi-tile-valor">@(((int)ViewBag.SinPlaca).ToString("N0"))</div><span class="kpi-tile-detalle">Activos sin placa capturada</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-barcode"></i></div><div class="kpi-tile-etiqueta">Sin VIN</div><div class="kpi-tile-valor">@(((int)ViewBag.SinVin).ToString("N0"))</div><span class="kpi-tile-detalle">Activos sin VIN capturado</span></div></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", "Transportistas")"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@(((int)ViewBag.TransportistasConTractores).ToString("N0"))</div><span class="kpi-tile-detalle">Con al menos un tractor activo</span></a></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="orden" value="@Request.QueryString["orden"]" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por económico, placa, VIN o marca..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        @Html.DropDownList("idTransportista", (IEnumerable<SelectListItem>)ViewBag.CatalogoTransportistas, "Todos los transportistas", new { @class = "form-select form-select-sm" })
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-truck"></i></div>
+            <h6>No hay tractores con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Económico", "economico")
+                        @Html.ColumnaOrden("Transportista", "transportista")
+                        <th>Placa</th>
+                        <th>VIN</th>
+                        @Html.ColumnaOrden("Año / marca", "anio")
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Items)
+                    {
+                        <tr class="@(t.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep cuadrado @(t.Activo ? "" : "av-gris")"><i class="fas fa-truck"></i></span>
+                                    <a class="nombre" href="@Url.Action("Editar", new { id = t.IdTractor })">@t.Economico</a>
+                                </div>
+                            </td>
+                            <td><a href="@Url.Action("Detalle", "Transportistas", new { id = t.IdTransportista })" class="fw-semibold">@t.Transportista</a></td>
+                            <td>@if (t.Placa != null) { @t.Placa } else { <span class="texto-tenue">—</span> }</td>
+                            <td class="small">@if (t.Vin != null) { @t.Vin } else { <span class="texto-tenue">—</span> }</td>
+                            <td>@(t.Anio.HasValue ? t.Anio.Value.ToString() : "")@(t.Anio.HasValue && t.Marca != null ? " · " : "")@t.Marca@(!t.Anio.HasValue && t.Marca == null ? "—" : "")</td>
+                            <td>
+                                @if (t.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = t.IdTractor })"><i class="fas fa-pen"></i> Editar</a>
+                                        <a class="dropdown-item" href="@Url.Action("Detalle", "Transportistas", new { id = t.IdTransportista })"><i class="fas fa-truck-fast"></i> Ver transportista</a>
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(t.Activo ? "Desactivar" : "Reactivar", "Tractores", new { id = t.IdTractor }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = t.Activo ? "¿Desactivar el tractor " + t.Economico + "?" : "¿Reactivar el tractor " + t.Economico + "?",
+                                            data_confirmar_detalle = t.Activo ? "Dejará de aparecer en los portales. Puedes reactivarlo cuando quieras." : "Su transportista debe seguir activo.",
+                                            data_confirmar_tipo = t.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = t.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(t.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(t.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(t.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)

@@ -1,0 +1,56 @@
+@model EP360_Logistics_Admin.Models.IPaginado
+@{
+    int actual = Model.Pagina, total = Model.TotalPaginas, rango = 2;
+    int inicio = Math.Max(1, actual - rango), fin = Math.Min(total, actual + rango);
+    bool exportar = ViewData["SinExportar"] == null;
+}
+@if (Model.Total > 0)
+{
+    <div class="pie-listado">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <span>Mostrando <b>@Model.Desde.ToString("N0")–@Model.Hasta.ToString("N0")</b> de <b>@Model.Total.ToString("N0")</b></span>
+            <label class="d-inline-flex align-items-center gap-2 mb-0">
+                Por página
+                <select class="form-select form-select-sm" onchange="location.href = this.options[this.selectedIndex].getAttribute('data-url');">
+                    @foreach (var t in EP360_Logistics_Admin.Models.Paginado<object>.Tamanos)
+                    {
+                        <option data-url="@Url.ConFiltros(new { tam = t })" @(t == Model.TamPagina ? "selected" : "")>@t</option>
+                    }
+                </select>
+            </label>
+            @if (exportar)
+            {
+                <a class="btn-suave btn-sm-ep" href="@Url.ConFiltros(new { formato = "csv", pagina = (int?)null })" title="Descarga todo lo filtrado, no solo esta página"><i class="fas fa-file-csv"></i> Exportar CSV</a>
+            }
+        </div>
+        @if (total > 1)
+        {
+            <nav aria-label="Paginación">
+                <ul class="pagination">
+                    <li class="page-item @(actual > 1 ? "" : "disabled")"><a class="page-link" href="@Url.ConFiltros(new { pagina = Math.Max(1, actual - 1) })" aria-label="Anterior"><i class="fas fa-chevron-left"></i></a></li>
+                    @if (inicio > 1)
+                    {
+                        <li class="page-item"><a class="page-link" href="@Url.ConFiltros(new { pagina = 1 })">1</a></li>
+                        if (inicio > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        }
+                    }
+                    @for (int i = inicio; i <= fin; i++)
+                    {
+                        <li class="page-item @(i == actual ? "active" : "")"><a class="page-link" href="@Url.ConFiltros(new { pagina = i })">@i</a></li>
+                    }
+                    @if (fin < total)
+                    {
+                        if (fin < total - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        }
+                        <li class="page-item"><a class="page-link" href="@Url.ConFiltros(new { pagina = total })">@total</a></li>
+                    }
+                    <li class="page-item @(actual < total ? "" : "disabled")"><a class="page-link" href="@Url.ConFiltros(new { pagina = Math.Min(total, actual + 1) })" aria-label="Siguiente"><i class="fas fa-chevron-right"></i></a></li>
+                </ul>
+            </nav>
+        }
+    </div>
+}

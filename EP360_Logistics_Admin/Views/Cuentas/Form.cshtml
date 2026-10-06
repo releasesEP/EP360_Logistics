@@ -2,53 +2,72 @@
 @{
     bool esNueva = Model.IdCuenta == 0;
     ViewBag.Title = esNueva ? "Nueva cuenta" : "Editar cuenta";
+    string urlCancelar = esNueva ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdCuenta });
 }
 
-<h1 class="titulo-pagina">@ViewBag.Title</h1>
-<p class="subtitulo-pagina">@(esNueva ? "El folio se genera automáticamente." : "Folio " + Model.Folio)</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@urlCancelar" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas @(esNueva ? "fa-building-circle-check" : "fa-pen-to-square")"></i>@ViewBag.Title</h3>
+            <p>@(esNueva ? "El folio se genera automáticamente al guardar." : Model.NombreComercial + " · Folio " + Model.Folio)</p>
+        </div>
+    </div>
+</div>
 
-<section class="tarjeta">
+<div class="form-ep">
     @using (Html.BeginForm())
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.IdCuenta)
-        @Html.ValidationSummary(true, null, new { @class = "error-formulario" })
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
 
-        <div class="rejilla-formulario">
-            <div class="campo campo-ancho">
-                @Html.LabelFor(m => m.NombreComercial)
-                @Html.TextBoxFor(m => m.NombreComercial, new { @class = "control", autofocus = "autofocus" })
-                @Html.ValidationMessageFor(m => m.NombreComercial, null, new { @class = "error-campo" })
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Identificación</div>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.NombreComercial)
+                        @Html.TextBoxFor(m => m.NombreComercial, new { @class = "form-control", autofocus = "autofocus" })
+                        @Html.ValidationMessageFor(m => m.NombreComercial, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.CodigoCuenta)
+                        @Html.TextBoxFor(m => m.CodigoCuenta, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.RazonSocial)
+                        @Html.TextBoxFor(m => m.RazonSocial, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Rfc)
+                        @Html.TextBoxFor(m => m.Rfc, new { @class = "form-control", maxlength = "20" })
+                    </div>
+                </div>
             </div>
-            <div class="campo">
-                @Html.LabelFor(m => m.CodigoCuenta)
-                @Html.TextBoxFor(m => m.CodigoCuenta, new { @class = "control" })
-            </div>
-            <div class="campo">
-                @Html.LabelFor(m => m.Rfc)
-                @Html.TextBoxFor(m => m.Rfc, new { @class = "control" })
-            </div>
-            <div class="campo campo-ancho">
-                @Html.LabelFor(m => m.RazonSocial)
-                @Html.TextBoxFor(m => m.RazonSocial, new { @class = "control" })
-            </div>
-            <div class="campo">
-                @Html.LabelFor(m => m.IdGrupoCuenta)
-                @Html.DropDownListFor(m => m.IdGrupoCuenta, (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Grupos, "(sin grupo)", new { @class = "control" })
-            </div>
-            <div class="campo">
-                @Html.LabelFor(m => m.IdCiudad)
-                @Html.DropDownListFor(m => m.IdCiudad, (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Ciudades, "(sin ciudad)", new { @class = "control" })
-            </div>
-            <div class="campo">
-                @Html.LabelFor(m => m.IdSucursal)
-                @Html.DropDownListFor(m => m.IdSucursal, (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "control" })
+
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">2</span> Ubicación y grupo</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.IdGrupoCuenta)
+                        @Html.DropDownListFor(m => m.IdGrupoCuenta, (IEnumerable<SelectListItem>)ViewBag.Grupos, "(sin grupo)", new { @class = "form-select" })
+                        <span class="ayuda-campo">Reúne varias cuentas de un mismo cliente. Las cajas de cliente normalmente se ligan al grupo.</span>
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.IdCiudad)
+                        @Html.DropDownListFor(m => m.IdCiudad, (IEnumerable<SelectListItem>)ViewBag.Ciudades, "(sin ciudad)", new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.IdSucursal)
+                        @Html.DropDownListFor(m => m.IdSucursal, (IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "form-select" })
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="acciones-formulario">
-            <button type="submit" class="boton boton-primario">Guardar</button>
-            <a class="boton" href="@(esNueva ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdCuenta }))">Cancelar</a>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@urlCancelar">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
         </div>
     }
-</section>
+</div>

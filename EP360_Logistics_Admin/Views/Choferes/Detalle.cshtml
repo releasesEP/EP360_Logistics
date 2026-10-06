@@ -1,0 +1,158 @@
+@model EP360_Logistics_Admin.Models.ChoferModel
+@{
+    ViewBag.Title = Model.NombreCompleto;
+    var ligas = (List<ChoferTransportistaModel>)ViewBag.Ligas;
+    var vinculables = (IEnumerable<SelectListItem>)ViewBag.Vinculables;
+    int activas = ligas.Count(l => l.Activo);
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver a choferes" aria-label="Volver a choferes"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-id-card"></i>Ficha del chofer</h3>
+            <p>Sus datos y el historial de transportistas con los que ha trabajado.</p>
+        </div>
+    </div>
+</div>
+
+<div class="perfil-cabecera">
+    <span class="avatar-ep grande @(Model.Activo ? "" : "av-gris")">@TextoUtil.Iniciales(Model.NombreCompleto)</span>
+    <div class="perfil-info">
+        <h3>
+            @Model.NombreCompleto
+            @if (Model.Activo)
+            {
+                <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
+            }
+            else
+            {
+                <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+            }
+            @if (activas > 1)
+            {
+                <span class="pastilla pastilla-morado"><i class="fas fa-shuffle"></i>@activas transportistas</span>
+            }
+        </h3>
+        <div class="perfil-meta">
+            <span><i class="fas fa-id-badge"></i>@(Model.Licencia != null ? "Licencia " + Model.Licencia : "Sin licencia")</span>
+            @if (Model.Telefono != null)
+            {
+                <span><i class="fas fa-mobile-screen"></i>@Model.Telefono</span>
+            }
+            <span><i class="fas fa-calendar-plus"></i>Alta @(Model.FechaCreacion.HasValue ? Model.FechaCreacion.Value.ToString("dd/MM/yyyy") : "—")</span>
+        </div>
+    </div>
+    <div class="perfil-acciones">
+        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
+        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Choferes", new { id = Model.IdChofer }, FormMethod.Post, new
+        {
+            data_confirmar = Model.Activo ? "¿Desactivar a " + Model.NombreCompleto + "?" : "¿Reactivar a " + Model.NombreCompleto + "?",
+            data_confirmar_detalle = Model.Activo ? "Se cerrarán sus ligas con transportistas (quedan en su historial)." : "Después vuelve a ligarlo con sus transportistas.",
+            data_confirmar_tipo = Model.Activo ? "peligro" : "normal",
+            data_confirmar_boton = Model.Activo ? "Sí, desactivar" : "Sí, reactivar"
+        }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="@(Model.Activo ? "btn-peligro-suave" : "btn-exito-suave")"><i class="fas @(Model.Activo ? "fa-user-slash" : "fa-user-check")"></i> @(Model.Activo ? "Desactivar" : "Reactivar")</button>
+        }
+    </div>
+</div>
+
+<ul class="nav pestanas-ep" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pestana-transportistas" type="button" role="tab"><i class="fas fa-truck-fast"></i> Transportistas <span class="contador">@activas</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pestana-datos" type="button" role="tab"><i class="fas fa-circle-info"></i> Datos</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="pestana-transportistas" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-clock-rotate-left"></i> Historial de transportistas <span class="contador">@activas activos de @ligas.Count</span></h6>
+            </div>
+            <div class="tarjeta-ep-cuerpo">
+                @if (ligas.Count == 0)
+                {
+                    <div class="vacio-ep"><div class="vacio-icono"><i class="fas fa-link-slash"></i></div><h6>Sin transportistas</h6><p>Este chofer no está ligado a ningún transportista.</p></div>
+                }
+                else
+                {
+                    <ul class="linea-tiempo">
+                        @foreach (var l in ligas)
+                        {
+                            <li class="@(l.Activo ? "activa" : "")">
+                                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                                    <div>
+                                        <div class="lt-titulo">
+                                            <a href="@Url.Action("Detalle", "Transportistas", new { id = l.IdTransportista })">@l.Transportista</a>
+                                            @if (l.Activo)
+                                            {
+                                                <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Trabaja con él</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="pastilla pastilla-gris">Ya no trabaja con él</span>
+                                            }
+                                        </div>
+                                        <div class="lt-fechas">
+                                            Desde @(l.FechaInicio.HasValue ? l.FechaInicio.Value.ToString("dd/MM/yyyy") : "fecha desconocida")
+                                            · hasta @(l.FechaFin.HasValue ? l.FechaFin.Value.ToString("dd/MM/yyyy") : (l.Activo ? "la fecha" : "fecha desconocida"))
+                                        </div>
+                                    </div>
+                                    @if (l.Activo)
+                                    {
+                                        using (Html.BeginForm("DesvincularTransportista", "Choferes", FormMethod.Post, new
+                                        {
+                                            data_confirmar = "¿Quitar a " + Model.NombreCompleto + " de " + l.Transportista + "?",
+                                            data_confirmar_detalle = "La liga se cierra con fecha de hoy y queda en el historial.",
+                                            data_confirmar_boton = "Sí, quitar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idChofer" value="@Model.IdChofer" />
+                                            <input type="hidden" name="idTransportista" value="@l.IdTransportista" />
+                                            <button type="submit" class="btn-peligro-suave btn-sm-ep"><i class="fas fa-link-slash"></i> Quitar</button>
+                                        }
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+            @if (Model.Activo)
+            {
+                <div class="tarjeta-ep-pie">
+                    @using (Html.BeginForm("VincularTransportista", "Choferes", FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idChofer" value="@Model.IdChofer" />
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold texto-secundario mb-1" for="idTransportistaLigar">Ligar con un transportista</label>
+                            @Html.DropDownList("idTransportista", vinculables, "Elige un transportista…", new { @class = "form-select", id = "idTransportistaLigar" })
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn-corporativo w-100"><i class="fas fa-link"></i> Ligar</button>
+                        </div>
+                    }
+                    <div class="form-text mt-2">Si el chofer ya había trabajado con ese transportista, se reactiva la misma liga.</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="pestana-datos" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-circle-info"></i> Datos del chofer</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <dl class="datos-ep">
+                    <div><dt>Nombre completo</dt><dd>@Model.NombreCompleto</dd></div>
+                    <div><dt>Licencia</dt>@if (Model.Licencia != null) { <dd>@Model.Licencia</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div><dt>Teléfono</dt>@if (Model.Telefono != null) { <dd>@Model.Telefono</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div><dt>Alta</dt><dd>@(Model.FechaCreacion.HasValue ? Model.FechaCreacion.Value.ToString("dd/MM/yyyy HH:mm") : "—")</dd></div>
+                    <div><dt>Última modificación</dt><dd>@(Model.FechaModificacion.HasValue ? Model.FechaModificacion.Value.ToString("dd/MM/yyyy HH:mm") : "—")</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,47 +1,151 @@
-@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.CuentaModel>
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.CuentaModel>
 @{
     ViewBag.Title = "Cuentas";
-    bool inactivos = ViewBag.Inactivos;
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string conGrupo = ViewBag.ConGrupoFiltro;
+    string volver = Request.RawUrl;
 }
 
-<div class="encabezado-pagina">
-    <div>
-        <h1 class="titulo-pagina">Cuentas</h1>
-        <p class="subtitulo-pagina">Cuentas de clientes compartidas por todos los portales.</p>
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-building"></i>Cuentas</h3>
+            <p>Cuentas de clientes compartidas por todos los portales. Varias cuentas de un mismo cliente se reúnen en un grupo.</p>
+        </div>
     </div>
-    <a class="boton boton-primario" href="@Url.Action("Crear")"><span class="icono-material" aria-hidden="true">add</span> Nueva cuenta</a>
+    <div class="encabezado-acciones">
+        <a class="btn-suave" href="@Url.Action("Index", "Grupos")"><i class="fas fa-layer-group"></i> Ver grupos</a>
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nueva cuenta</a>
+    </div>
 </div>
 
-@using (Html.BeginForm("Index", "Cuentas", FormMethod.Get, new { @class = "barra-filtros" }))
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">Cuentas activas</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivas).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { conGrupo = "si" })"><div class="kpi-tile-icono" style="--kpi-color:#0891b2;"><i class="fas fa-layer-group"></i></div><div class="kpi-tile-etiqueta">Con grupo</div><div class="kpi-tile-valor">@(((int)ViewBag.ConGrupo).ToString("N0"))</div><span class="kpi-tile-detalle">en @(((int)ViewBag.TotalGrupos).ToString("N0")) grupos</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { conGrupo = "no" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-circle-question"></i></div><div class="kpi-tile-etiqueta">Sin grupo</div><div class="kpi-tile-valor">@(((int)ViewBag.SinGrupo).ToString("N0"))</div><span class="kpi-tile-detalle">Cuentas sueltas</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { estado = "inactivos" })"><div class="kpi-tile-icono" style="--kpi-color:#64748b;"><i class="fas fa-circle-pause"></i></div><div class="kpi-tile-etiqueta">Inactivas</div><div class="kpi-tile-valor">@(((int)ViewBag.Inactivas).ToString("N0"))</div><span class="kpi-tile-detalle">Dadas de baja</span></a></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="orden" value="@Request.QueryString["orden"]" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por nombre, código, razón social, RFC o folio..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        @Html.DropDownList("idGrupoCuenta", (IEnumerable<SelectListItem>)ViewBag.Grupos, "Todos los grupos", new { @class = "form-select form-select-sm" })
+        <select name="conGrupo" class="form-select form-select-sm" aria-label="Con o sin grupo">
+            <option value="">Con y sin grupo</option>
+            <option value="si" @(conGrupo == "si" ? "selected" : "")>Solo con grupo</option>
+            <option value="no" @(conGrupo == "no" ? "selected" : "")>Solo sin grupo</option>
+        </select>
+        @Html.DropDownList("idCiudad", (IEnumerable<SelectListItem>)ViewBag.Ciudades, "Todas las ciudades", new { @class = "form-select form-select-sm" })
+        @Html.DropDownList("idSucursal", (IEnumerable<SelectListItem>)ViewBag.Sucursales, "Todas las sucursales", new { @class = "form-select form-select-sm" })
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
 {
-    <input type="text" name="buscar" value="@ViewBag.Buscar" class="control" placeholder="Buscar por nombre o código" />
-    @Html.DropDownList("idGrupoCuenta", (System.Collections.Generic.IEnumerable<SelectListItem>)ViewBag.Grupos, "Todos los grupos", new { @class = "control" })
-    <label class="check"><input type="checkbox" name="inactivos" value="true" @(inactivos ? "checked" : "") /> Incluir inactivas</label>
-    <button type="submit" class="boton">Filtrar</button>
-    <span class="contador">@Model.Count cuentas</span>
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-building-circle-xmark"></i></div>
+            <h6>No hay cuentas con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Cuenta", "nombre")
+                        @Html.ColumnaOrden("Folio", "folio")
+                        @Html.ColumnaOrden("Grupo", "grupo")
+                        @Html.ColumnaOrden("Ciudad", "ciudad")
+                        @Html.ColumnaOrden("Sucursal", "sucursal")
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Items)
+                    {
+                        <tr class="@(c.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep cuadrado @(c.Activo ? "" : "av-gris")">@TextoUtil.Iniciales(c.NombreComercial)</span>
+                                    <div style="min-width:0;">
+                                        <a class="nombre" href="@Url.Action("Detalle", new { id = c.IdCuenta })">@c.NombreComercial</a>
+                                        <span class="sub">@(c.RazonSocial ?? (c.Rfc != null ? "RFC " + c.Rfc : (c.CodigoCuenta != null ? "Código " + c.CodigoCuenta : "Sin razón social")))</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small texto-secundario">@c.Folio</td>
+                            <td>
+                                @if (c.IdGrupoCuenta.HasValue)
+                                {
+                                    <a class="pastilla pastilla-navy" href="@Url.Action("Detalle", "Grupos", new { id = c.IdGrupoCuenta })"><i class="fas fa-layer-group"></i>@c.GrupoCuenta</a>
+                                }
+                                else
+                                {
+                                    <span class="texto-tenue small">Sin grupo</span>
+                                }
+                            </td>
+                            <td>@(c.Ciudad != null ? c.Ciudad + " (" + c.Pais + ")" : "—")</td>
+                            <td>@(c.Sucursal ?? "—")</td>
+                            <td>
+                                @if (c.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Detalle", new { id = c.IdCuenta })"><i class="fas fa-eye"></i> Ver ficha</a>
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = c.IdCuenta })"><i class="fas fa-pen"></i> Editar</a>
+                                        @if (c.IdGrupoCuenta.HasValue)
+                                        {
+                                            <a class="dropdown-item" href="@Url.Action("Detalle", "Grupos", new { id = c.IdGrupoCuenta })"><i class="fas fa-layer-group"></i> Ver su grupo</a>
+                                        }
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(c.Activo ? "Desactivar" : "Reactivar", "Cuentas", new { id = c.IdCuenta }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = c.Activo ? "¿Desactivar la cuenta " + c.NombreComercial + "?" : "¿Reactivar la cuenta " + c.NombreComercial + "?",
+                                            data_confirmar_detalle = c.Activo ? "También se quitan sus contactos y se dan de baja sus cajas. Puedes reactivarla después." : "Sus contactos y cajas se reactivan uno por uno.",
+                                            data_confirmar_tipo = c.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = c.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(c.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(c.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(c.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }
 
-<section class="tarjeta tarjeta-tabla">
-    <table class="tabla">
-        <thead>
-            <tr><th>Folio</th><th>Cuenta</th><th>Grupo</th><th>Ciudad</th><th>Sucursal</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var c in Model)
-            {
-                <tr class="@(c.Activo ? "" : "fila-inactiva")">
-                    <td>@c.Folio</td>
-                    <td><a href="@Url.Action("Detalle", new { id = c.IdCuenta })">@c.NombreComercial</a></td>
-                    <td>@c.GrupoCuenta</td>
-                    <td>@c.Ciudad</td>
-                    <td>@c.Sucursal</td>
-                    <td>@(c.Activo ? "Activa" : "Inactiva")</td>
-                </tr>
-            }
-            @if (Model.Count == 0)
-            {
-                <tr><td colspan="6" class="vacio">No hay cuentas con esos filtros.</td></tr>
-            }
-        </tbody>
-    </table>
-</section>
+@Html.Partial("_Paginacion", (IPaginado)Model)

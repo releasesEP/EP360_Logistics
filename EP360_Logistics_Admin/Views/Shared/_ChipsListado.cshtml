@@ -1,0 +1,16 @@
+@model EP360_Logistics_Admin.Models.EncabezadoListado
+@* Lo que esta filtrado, con su "x" para quitarlo, y el total de resultados. *@
+<div class="listado-activos">
+    <span class="listado-total"><b>@Model.Total.ToString("N0")</b> @Model.Sustantivo</span>
+    @foreach (var c in Model.Chips)
+    {
+        var quitar = new System.Collections.Generic.Dictionary<string, object> { { c.Parametro, null } };
+        <a class="listado-chip" href="@Url.ConFiltros(quitar)" title="Quitar filtro"><i class="fas @(c.Icono ?? "fa-filter")"></i>@c.Texto<i class="fas fa-xmark"></i></a>
+    }
+    @if (Model.Chips.Count > 0)
+    {
+        var limpiar = new System.Collections.Generic.Dictionary<string, object>();
+        foreach (var c in Model.Chips) { limpiar[c.Parametro] = null; }
+        <a class="listado-limpiar" href="@Url.ConFiltros(limpiar)"><i class="fas fa-eraser me-1"></i>Limpiar filtros</a>
+    }
+</div>

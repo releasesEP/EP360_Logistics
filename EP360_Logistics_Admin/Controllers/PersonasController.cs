@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using EP360_Logistics_Admin.Helpers;
 using EP360_Logistics_Admin.Models;
 using EP360_Logistics_Admin.Services;
 
@@ -11,12 +14,67 @@ namespace EP360_Logistics_Admin.Controllers
         private readonly CuentaService _cuentaServicio = new CuentaService();
         private readonly CatalogoService _catalogos = new CatalogoService();
 
-        public ActionResult Index(string tipo, string buscar, bool inactivos = false)
+        public ActionResult Index(string estado, string tipo, int? idDepartamento, int? idSucursal, string buscar,
+                                  string orden, int pagina = 1, int tam = 25, string formato = null)
         {
-            ViewBag.Tipo = tipo;
+            estado = Estados.Normalizar(estado);
+            var todas = _servicio.ListarTodas();
+
+            // Todo menos el estado: de aqui salen los conteos de las pestanas.
+            var filtradas = todas.Where(p =>
+                    (tipo == null || p.TipoPersona == tipo) &&
+                    (idDepartamento == null || p.IdDepartamento == idDepartamento) &&
+                    (idSucursal == null || p.IdSucursal == idSucursal) &&
+                    TextoUtil.Contiene(buscar, p.NombreCompleto, p.Correo, p.SamAccountName, p.Puesto, p.Departamento, p.Extension))
+                .ToList();
+
+            var resultado = ListadoHelpers.Ordenar(Estados.Filtrar(filtradas, estado, p => p.Activo), orden, "nombre",
+                new Dictionary<string, Func<PersonaModel, object>>
+                {
+                    { "nombre", p => p.NombreCompleto },
+                    { "tipo", p => p.TipoPersona },
+                    { "departamento", p => p.Departamento ?? "￿" },
+                    { "sucursal", p => p.Sucursal ?? "￿" }
+                }).ToList();
+
+            if (formato == "csv")
+                return ListadoHelpers.Csv("personas", resultado,
+                    ("Nombre", p => p.NombreCompleto), ("Tipo", p => p.TipoPersona), ("Correo", p => p.Correo),
+                    ("Usuario AD", p => p.SamAccountName), ("Puesto", p => p.Puesto), ("Departamento", p => p.Departamento),
+                    ("Sucursal", p => p.Sucursal), ("Teléfono", p => p.Telefono), ("Extensión", p => p.Extension), ("Activa", p => p.Activo));
+
+            var departamentos = _catalogos.Departamentos(idDepartamento);
+            var sucursales = _catalogos.Sucursales(idSucursal);
+            var encabezado = new EncabezadoListado
+            {
+                PestanaActiva = estado,
+                Pestanas = Estados.Pestanas(filtradas, p => p.Activo, "as"),
+                Total = resultado.Count,
+                Sustantivo = resultado.Count == 1 ? "persona" : "personas"
+            };
+            if (!string.IsNullOrWhiteSpace(buscar)) encabezado.Chips.Add(new ChipFiltro { Parametro = "buscar", Texto = "\"" + buscar + "\"", Icono = "fa-magnifying-glass" });
+            if (tipo != null) encabezado.Chips.Add(new ChipFiltro { Parametro = "tipo", Texto = NombreTipo(tipo), Icono = "fa-user-tag" });
+            if (idDepartamento != null) encabezado.Chips.Add(new ChipFiltro { Parametro = "idDepartamento", Texto = departamentos.Where(d => d.Selected).Select(d => d.Text).FirstOrDefault(), Icono = "fa-sitemap" });
+            if (idSucursal != null) encabezado.Chips.Add(new ChipFiltro { Parametro = "idSucursal", Texto = sucursales.Where(s => s.Selected).Select(s => s.Text).FirstOrDefault(), Icono = "fa-location-dot" });
+
+            // Indicadores de arriba: sobre todo el directorio, sin filtros.
+            ViewBag.TotalActivas = todas.Count(p => p.Activo);
+            ViewBag.TotalAD = todas.Count(p => p.Activo && p.TipoPersona == "AD");
+            ViewBag.TotalExternos = todas.Count(p => p.Activo && p.TipoPersona == "Externo");
+            ViewBag.TotalContactos = todas.Count(p => p.Activo && p.TipoPersona == "Contacto");
+            ViewBag.SinDepartamento = todas.Count(p => p.Activo && p.IdDepartamento == null);
+
+            ViewBag.Encabezado = encabezado;
+            ViewBag.Departamentos = departamentos;
+            ViewBag.Sucursales = sucursales;
             ViewBag.Buscar = buscar;
-            ViewBag.Inactivos = inactivos;
-            return View(_servicio.Listar(tipo, inactivos, buscar));
+            ViewBag.Tipo = tipo;
+            return View(new Paginado<PersonaModel>(resultado, pagina, tam));
+        }
+
+        public static string NombreTipo(string tipo)
+        {
+            return tipo == "AD" ? "Usuarios de AD" : tipo == "Externo" ? "Usuarios externos" : tipo == "Contacto" ? "Contactos" : tipo;
         }
 
         public ActionResult Detalle(int id)
@@ -94,24 +152,24 @@ namespace EP360_Logistics_Admin.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Desactivar(int id)
+        public ActionResult Desactivar(int id, string returnUrl)
         {
             Ejecutar(() => _servicio.Desactivar(id), "Persona desactivada.");
-            return RedirectToAction("Index");
+            return Volver(returnUrl, RedirectToAction("Index"));
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Reactivar(int id)
+        public ActionResult Reactivar(int id, string returnUrl)
         {
             Ejecutar(() => _servicio.Reactivar(id), "Persona reactivada.");
-            return RedirectToAction("Detalle", new { id });
+            return Volver(returnUrl, RedirectToAction("Detalle", new { id }));
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult FijarPassword(int idPersona, string password, string confirmar)
         {
             Ejecutar(() => _servicio.FijarPassword(idPersona, password, confirmar), "Contraseña guardada. La persona ya puede entrar como usuario externo.");
-            return RedirectToAction("Detalle", new { id = idPersona });
+            return Redirect(Url.Action("Detalle", new { id = idPersona }) + "#acceso");
         }
 
         [HttpPost, ValidateAntiForgeryToken]
@@ -119,14 +177,14 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (idCuenta == null) TempData["Error"] = "Elige una cuenta.";
             else Ejecutar(() => _servicio.Vincular(idPersona, idCuenta.Value, categoria, puestoEnCuenta), "Cuenta vinculada.");
-            return RedirectToAction("Detalle", new { id = idPersona });
+            return Redirect(Url.Action("Detalle", new { id = idPersona }) + "#cuentas");
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult DesvincularCuenta(int idPersona, int idCuenta)
         {
             Ejecutar(() => _servicio.Desvincular(idPersona, idCuenta), "Cuenta quitada.");
-            return RedirectToAction("Detalle", new { id = idPersona });
+            return Redirect(Url.Action("Detalle", new { id = idPersona }) + "#cuentas");
         }
 
         private ActionResult Formulario(PersonaModel modelo)

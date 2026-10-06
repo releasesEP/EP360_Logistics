@@ -1,0 +1,148 @@
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.ChoferModel>
+@{
+    ViewBag.Title = "Choferes";
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string situacion = ViewBag.Situacion;
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-id-card"></i>Choferes</h3>
+            <p>Un chofer se identifica por su licencia y puede trabajar con varios transportistas.</p>
+        </div>
+    </div>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo chofer</a>
+    </div>
+</div>
+
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes activos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivos).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "varios" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Con 2+ transportistas</div><div class="kpi-tile-valor">@(((int)ViewBag.Varios).ToString("N0"))</div><span class="kpi-tile-detalle">Trabajan con varias líneas</span></a></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "sintransportista" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-link-slash"></i></div><div class="kpi-tile-etiqueta">Sin transportista activo</div><div class="kpi-tile-valor">@(((int)ViewBag.SinTransportista).ToString("N0"))</div><span class="kpi-tile-detalle">Solo tienen historial</span></a></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "sinlicencia" })"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-id-badge"></i></div><div class="kpi-tile-etiqueta">Sin licencia</div><div class="kpi-tile-valor">@(((int)ViewBag.SinLicencia).ToString("N0"))</div><span class="kpi-tile-detalle">Activos sin licencia capturada</span></a></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="orden" value="@Request.QueryString["orden"]" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por nombre, licencia, teléfono o transportista..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        @Html.DropDownList("idTransportista", (IEnumerable<SelectListItem>)ViewBag.Transportistas, "Todos los transportistas", new { @class = "form-select form-select-sm" })
+        <select name="situacion" class="form-select form-select-sm" aria-label="Situación">
+            <option value="">Cualquier situación</option>
+            @foreach (var s in EP360_Logistics_Admin.Controllers.ChoferesController.Situaciones)
+            {
+                <option value="@s.Key" @(situacion == s.Key ? "selected" : "")>@s.Value</option>
+            }
+        </select>
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-id-card"></i></div>
+            <h6>No hay choferes con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Chofer", "nombre")
+                        @Html.ColumnaOrden("Licencia", "licencia")
+                        @Html.ColumnaOrden("Transportistas", "transportistas")
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Items)
+                    {
+                        var lista = c.ListaTransportistas;
+                        <tr class="@(c.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep @(c.Activo ? "" : "av-gris")">@TextoUtil.Iniciales(c.NombreCompleto)</span>
+                                    <div style="min-width:0;">
+                                        <a class="nombre" href="@Url.Action("Detalle", new { id = c.IdChofer })">@c.NombreCompleto</a>
+                                        <span class="sub">@(c.Telefono != null ? c.Telefono : "Sin teléfono")</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@if (c.Licencia != null) { <span class="fw-semibold">@c.Licencia</span> } else { <span class="pastilla pastilla-rojo"><i class="fas fa-triangle-exclamation"></i>Sin licencia</span> }</td>
+                            <td>
+                                @if (lista.Count == 0)
+                                {
+                                    <span class="texto-tenue small">Sin transportista activo</span>
+                                }
+                                else
+                                {
+                                    <div class="lista-pastillas">
+                                        @foreach (var n in lista)
+                                        {
+                                            <span class="pastilla pastilla-navy"><i class="fas fa-truck-fast"></i>@n</span>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                @if (c.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Detalle", new { id = c.IdChofer })"><i class="fas fa-eye"></i> Ver ficha</a>
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = c.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(c.Activo ? "Desactivar" : "Reactivar", "Choferes", new { id = c.IdChofer }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = c.Activo ? "¿Desactivar a " + c.NombreCompleto + "?" : "¿Reactivar a " + c.NombreCompleto + "?",
+                                            data_confirmar_detalle = c.Activo ? "Se cerrarán sus ligas con transportistas (quedan en su historial)." : "Después vuelve a ligarlo con sus transportistas.",
+                                            data_confirmar_tipo = c.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = c.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(c.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(c.Activo ? "fa-user-slash" : "fa-user-check")"></i> @(c.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)

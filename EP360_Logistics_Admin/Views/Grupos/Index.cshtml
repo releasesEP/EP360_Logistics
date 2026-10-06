@@ -1,56 +1,127 @@
-@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.GrupoCuentaModel>
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.GrupoCuentaModel>
 @{
     ViewBag.Title = "Grupos de cuentas";
-    bool inactivos = ViewBag.Inactivos;
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    var cajas = (Dictionary<int, int>)ViewBag.Cajas;
+    string volver = Request.RawUrl;
+    string orden = Request.QueryString["orden"] ?? "";
 }
 
-<div class="encabezado-pagina">
-    <div>
-        <h1 class="titulo-pagina">Grupos de cuentas</h1>
-        <p class="subtitulo-pagina">Un grupo reúne varias cuentas de un mismo cliente. Quien pertenece a una cuenta del grupo ve todas.</p>
+<style>
+    .grupo-tarjeta { display: flex; flex-direction: column; height: 100%; background: var(--bg-surface); border: 1px solid var(--borde-claro); border-radius: 16px; box-shadow: 0 6px 18px rgba(11, 27, 61, .05); transition: transform .2s, box-shadow .2s; }
+    .grupo-tarjeta:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(11, 27, 61, .1); }
+    .grupo-tarjeta.inactiva { opacity: .6; }
+    .grupo-cabeza { display: flex; align-items: center; gap: 12px; padding: 16px 16px 12px; }
+    .grupo-cabeza .nombre { font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+    .grupo-cabeza .nombre:hover { color: var(--color-principal-medio); }
+    .grupo-cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0 16px; border-radius: 12px; overflow: hidden; background: var(--borde-claro); }
+    .grupo-cifras div { background: var(--bg-page); padding: 10px 12px; }
+    .grupo-cifras b { display: block; font-size: 1.35rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .grupo-cifras span { font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
+    .grupo-pie { display: flex; align-items: center; gap: 6px; margin-top: auto; padding: 12px 16px; }
+    .orden-grupos { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--text-secondary); }
+</style>
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-layer-group"></i>Grupos de cuentas</h3>
+            <p>Un grupo reúne las cuentas de un mismo cliente. Quien pertenece a una cuenta del grupo ve todas, y las cajas de cliente se ligan al grupo.</p>
+        </div>
     </div>
-    <a class="boton boton-primario" href="@Url.Action("Crear")"><span class="icono-material" aria-hidden="true">add</span> Nuevo grupo</a>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo grupo</a>
+    </div>
 </div>
 
-<div class="barra-herramientas">
-    @if (inactivos)
-    {
-        <a href="@Url.Action("Index")">Ocultar inactivos</a>
-    }
-    else
-    {
-        <a href="@Url.Action("Index", new { inactivos = true })">Mostrar también inactivos</a>
-    }
-    <span class="contador">@Model.Count grupos</span>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#0891b2;"><i class="fas fa-layer-group"></i></div><div class="kpi-tile-etiqueta">Grupos activos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivos).ToString("N0"))</div></div></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", "Cuentas", new { conGrupo = "si" })"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">Cuentas en grupos</div><div class="kpi-tile-valor">@(((int)ViewBag.CuentasEnGrupos).ToString("N0"))</div></a></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", "Cajas", new { tipoPropiedad = "Cliente" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas de grupos</div><div class="kpi-tile-valor">@(((int)ViewBag.CajasEnGrupos).ToString("N0"))</div><span class="kpi-tile-detalle">Ligadas directo a un grupo</span></a></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-circle-question"></i></div><div class="kpi-tile-etiqueta">Grupos vacíos</div><div class="kpi-tile-valor">@(((int)ViewBag.SinCuentas).ToString("N0"))</div><span class="kpi-tile-detalle">Activos sin cuentas</span></div></div>
 </div>
 
-<section class="tarjeta tarjeta-tabla">
-    <table class="tabla">
-        <thead>
-            <tr><th>Folio</th><th>Nombre</th><th class="num">Cuentas</th><th>Estado</th><th></th></tr>
-        </thead>
-        <tbody>
-            @foreach (var g in Model)
-            {
-                <tr class="@(g.Activo ? "" : "fila-inactiva")">
-                    <td>@g.Folio</td>
-                    <td><a href="@Url.Action("Index", "Cuentas", new { idGrupoCuenta = g.IdGrupoCuenta })">@g.Nombre</a></td>
-                    <td class="num">@g.TotalCuentas</td>
-                    <td>@(g.Activo ? "Activo" : "Inactivo")</td>
-                    <td class="acciones">
-                        <a class="boton boton-chico" href="@Url.Action("Editar", new { id = g.IdGrupoCuenta })">Editar</a>
-                        @using (Html.BeginForm(g.Activo ? "Desactivar" : "Reactivar", "Grupos", new { id = g.IdGrupoCuenta }, FormMethod.Post, new { @class = "en-linea" }))
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar grupo por nombre o folio..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+        <select name="orden" class="form-select form-select-sm" aria-label="Orden">
+            <option value="nombre" @(orden == "" || orden == "nombre" ? "selected" : "")>Nombre (A-Z)</option>
+            <option value="nombre_desc" @(orden == "nombre_desc" ? "selected" : "")>Nombre (Z-A)</option>
+            <option value="cuentas_desc" @(orden == "cuentas_desc" ? "selected" : "")>Más cuentas primero</option>
+            <option value="cajas_desc" @(orden == "cajas_desc" ? "selected" : "")>Más cajas primero</option>
+            <option value="folio_desc" @(orden == "folio_desc" ? "selected" : "")>Más recientes primero</option>
+        </select>
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-layer-group"></i></div>
+            <h6>No hay grupos con esos filtros</h6>
+            <p>Prueba con otra búsqueda o crea un grupo nuevo.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var g in Model.Items)
+        {
+            int numCajas = cajas.ContainsKey(g.IdGrupoCuenta) ? cajas[g.IdGrupoCuenta] : 0;
+            <div class="col-md-6 col-xl-4">
+                <div class="grupo-tarjeta @(g.Activo ? "" : "inactiva")">
+                    <div class="grupo-cabeza">
+                        <span class="avatar-ep cuadrado @(g.Activo ? "" : "av-gris")">@TextoUtil.Iniciales(g.Nombre)</span>
+                        <div style="min-width:0;" class="flex-grow-1">
+                            <a class="nombre d-block text-truncate" href="@Url.Action("Detalle", new { id = g.IdGrupoCuenta })" title="@g.Nombre">@g.Nombre</a>
+                            <span class="small texto-tenue">@g.Folio</span>
+                        </div>
+                        @if (g.Activo)
                         {
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="boton boton-chico @(g.Activo ? "boton-peligro" : "")">@(g.Activo ? "Desactivar" : "Reactivar")</button>
+                            <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activo</span>
                         }
-                    </td>
-                </tr>
-            }
-            @if (Model.Count == 0)
-            {
-                <tr><td colspan="5" class="vacio">No hay grupos.</td></tr>
-            }
-        </tbody>
-    </table>
-</section>
+                        else
+                        {
+                            <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactivo</span>
+                        }
+                    </div>
+                    <div class="grupo-cifras">
+                        <div><b>@g.TotalCuentas</b><span>@(g.TotalCuentas == 1 ? "Cuenta" : "Cuentas")</span></div>
+                        <div><b>@numCajas</b><span>@(numCajas == 1 ? "Caja" : "Cajas")</span></div>
+                    </div>
+                    <div class="grupo-pie">
+                        <a class="btn-corporativo btn-sm-ep" href="@Url.Action("Detalle", new { id = g.IdGrupoCuenta })"><i class="fas fa-eye"></i> Ver grupo</a>
+                        <a class="btn-suave btn-sm-ep" href="@Url.Action("Editar", new { id = g.IdGrupoCuenta })"><i class="fas fa-pen"></i> Editar</a>
+                        <div class="ms-auto">
+                            @using (Html.BeginForm(g.Activo ? "Desactivar" : "Reactivar", "Grupos", new { id = g.IdGrupoCuenta }, FormMethod.Post, new
+                            {
+                                data_confirmar = g.Activo ? "¿Desactivar el grupo " + g.Nombre + "?" : "¿Reactivar el grupo " + g.Nombre + "?",
+                                data_confirmar_detalle = g.Activo ? "Sus " + g.TotalCuentas + " cuentas quedan sin grupo y sus " + numCajas + " cajas se dan de baja." : "Después tendrás que volver a agregarle sus cuentas.",
+                                data_confirmar_tipo = g.Activo ? "peligro" : "normal",
+                                data_confirmar_boton = g.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                            }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="returnUrl" value="@volver" />
+                                <button type="submit" class="btn-icono" title="@(g.Activo ? "Desactivar" : "Reactivar")" aria-label="@(g.Activo ? "Desactivar" : "Reactivar")"><i class="fas @(g.Activo ? "fa-ban" : "fa-rotate-left")"></i></button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)

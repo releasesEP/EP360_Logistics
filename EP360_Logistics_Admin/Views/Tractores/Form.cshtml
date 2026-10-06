@@ -1,0 +1,69 @@
+@model EP360_Logistics_Admin.Models.TractorModel
+@{
+    bool esNuevo = Model.IdTractor == 0;
+    ViewBag.Title = esNuevo ? "Nuevo tractor" : "Editar tractor";
+    string urlVolver = Model.IdTransportista.HasValue ? Url.Action("Detalle", "Transportistas", new { id = Model.IdTransportista.Value }) + "#pestana-tractores" : Url.Action("Index");
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@urlVolver" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-truck"></i>@ViewBag.Title</h3>
+            <p>@(esNuevo ? "El económico se guarda en mayúsculas, sin espacios ni guiones." : Model.Transportista + " · " + Model.Economico)</p>
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.IdTractor)
+    <div class="form-ep">
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> ¿De quién es?</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.IdTransportista)
+                        @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "Elige un transportista…", new { @class = "form-select" })
+                        @Html.ValidationMessageFor(m => m.IdTransportista, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Economico)
+                        @Html.TextBoxFor(m => m.Economico, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. WH120" })
+                        @Html.ValidationMessageFor(m => m.Economico, null, new { @class = "error-campo" })
+                        <div class="form-text">No se repite dentro del mismo transportista.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">2</span> Identificación y características</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Placa)
+                        @Html.TextBoxFor(m => m.Placa, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.Vin)
+                        @Html.TextBoxFor(m => m.Vin, new { @class = "form-control", maxlength = "20" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Anio)
+                        @Html.TextBoxFor(m => m.Anio, new { @class = "form-control", type = "number", min = "1950", max = "2100" })
+                        @Html.ValidationMessageFor(m => m.Anio, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.Marca)
+                        @Html.TextBoxFor(m => m.Marca, new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@urlVolver">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    </div>
+}

@@ -1,0 +1,63 @@
+@model EP360_Logistics_Admin.Models.ChoferModel
+@{
+    bool esNuevo = Model.IdChofer == 0;
+    ViewBag.Title = esNuevo ? "Nuevo chofer" : "Editar chofer";
+    string urlVolver = esNuevo ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdChofer });
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@urlVolver" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-id-card"></i>@ViewBag.Title</h3>
+            <p>@(esNuevo ? "La licencia no se puede repetir entre choferes activos." : Model.NombreCompleto)</p>
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.IdChofer)
+    <div class="form-ep">
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Datos del chofer</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        @Html.LabelFor(m => m.NombreCompleto)
+                        @Html.TextBoxFor(m => m.NombreCompleto, new { @class = "form-control", autofocus = "autofocus" })
+                        @Html.ValidationMessageFor(m => m.NombreCompleto, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Licencia)
+                        @Html.TextBoxFor(m => m.Licencia, new { @class = "form-control", placeholder = "Ej. CHIH222863" })
+                        <div class="form-text">Se guarda en mayúsculas y sin espacios.</div>
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Telefono)
+                        @Html.TextBoxFor(m => m.Telefono, new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+            @if (esNuevo)
+            {
+                <div class="form-seccion">
+                    <div class="form-seccion-titulo"><span class="form-paso">2</span> Primer transportista</div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            @Html.LabelFor(m => m.IdTransportista)
+                            @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "(ligar después)", new { @class = "form-select" })
+                            <div class="form-text">Más transportistas se ligan desde la ficha del chofer.</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@urlVolver">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    </div>
+}

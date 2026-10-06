@@ -18,6 +18,8 @@ namespace EP360_Logistics_Admin.Services
             return _dal.Listar(tipoPersona, incluirInactivos, buscar);
         }
 
+        public List<PersonaModel> ListarTodas() { return _dal.ListarTodas(); }
+
         // Personas que se pueden vincular como contacto de una cuenta (todo menos usuarios de AD).
         public List<PersonaModel> ListarVinculables()
         {

@@ -1,0 +1,134 @@
+@model EP360_Logistics_Admin.Models.CajaModel
+@{
+    ViewBag.Title = "Caja " + Model.NumeroCaja;
+    string colorAvatar = !Model.Activo ? "av-gris" : Model.TipoPropiedad == "Cliente" ? "av-azul" : Model.TipoPropiedad == "Transportista" ? "av-ambar" : "av-morado";
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver a cajas" aria-label="Volver a cajas"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-trailer"></i>Ficha de la caja</h3>
+            <p>Propietario, transportista habitual y características del trailer.</p>
+        </div>
+    </div>
+</div>
+
+<div class="perfil-cabecera">
+    <span class="avatar-ep grande cuadrado @colorAvatar"><i class="fas fa-trailer"></i></span>
+    <div class="perfil-info">
+        <h3>
+            @Model.NumeroCaja
+            @if (Model.TipoPropiedad == "Cliente")
+            {
+                <span class="pastilla pastilla-azul"><i class="fas fa-building"></i>De cliente</span>
+            }
+            else if (Model.TipoPropiedad == "Transportista")
+            {
+                <span class="pastilla pastilla-ambar"><i class="fas fa-truck-fast"></i>De transportista</span>
+            }
+            else
+            {
+                <span class="pastilla pastilla-morado"><i class="fas fa-warehouse"></i>Propia de EP</span>
+            }
+            @if (Model.Activo)
+            {
+                <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+            }
+            else
+            {
+                <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+            }
+        </h3>
+        <div class="perfil-meta">
+            <span><i class="fas fa-user-tie"></i>@(Model.Propietario ?? "Sin propietario")</span>
+            @if (Model.Placa != null)
+            {
+                <span><i class="fas fa-id-badge"></i>Placa @Model.Placa</span>
+            }
+            @if (!string.IsNullOrEmpty(Model.Resumen))
+            {
+                <span><i class="fas fa-ruler-combined"></i>@Model.Resumen</span>
+            }
+        </div>
+    </div>
+    <div class="perfil-acciones">
+        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdCaja })"><i class="fas fa-pen"></i> Editar</a>
+        @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Cajas", new { id = Model.IdCaja }, FormMethod.Post, new
+        {
+            data_confirmar = Model.Activo ? "¿Desactivar la caja " + Model.NumeroCaja + "?" : "¿Reactivar la caja " + Model.NumeroCaja + "?",
+            data_confirmar_detalle = Model.Activo ? "Dejará de aparecer en los portales. Puedes reactivarla cuando quieras." : "Su propietario debe seguir activo; si no, primero reasígnala.",
+            data_confirmar_tipo = Model.Activo ? "peligro" : "normal",
+            data_confirmar_boton = Model.Activo ? "Sí, desactivar" : "Sí, reactivar"
+        }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="@(Model.Activo ? "btn-peligro-suave" : "btn-exito-suave")"><i class="fas @(Model.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(Model.Activo ? "Desactivar" : "Reactivar")</button>
+        }
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="tarjeta-ep h-100 mb-0">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-user-tie"></i> Propiedad</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <dl class="datos-ep">
+                    <div>
+                        <dt>Tipo de propiedad</dt>
+                        <dd>@(Model.TipoPropiedad == "Cliente" ? (Model.IdGrupoCuenta.HasValue ? "Cliente (grupo de cuentas)" : "Cliente (cuenta)") : Model.TipoPropiedad == "Transportista" ? "Transportista" : "EP Logistics")</dd>
+                    </div>
+                    <div>
+                        <dt>Propietario</dt>
+                        <dd>
+                            @if (Model.IdGrupoCuenta.HasValue)
+                            {
+                                <a href="@Url.Action("Detalle", "Grupos", new { id = Model.IdGrupoCuenta.Value })">@Model.GrupoCuenta</a>
+                            }
+                            else if (Model.IdCuenta.HasValue)
+                            {
+                                <a href="@Url.Action("Detalle", "Cuentas", new { id = Model.IdCuenta.Value })">@Model.Cuenta</a>
+                            }
+                            else if (Model.TipoPropiedad == "Transportista" && Model.IdTransportista.HasValue)
+                            {
+                                <a href="@Url.Action("Detalle", "Transportistas", new { id = Model.IdTransportista.Value })">@Model.Transportista</a>
+                            }
+                            else
+                            {
+                                @Model.Propietario
+                            }
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>@(Model.TipoPropiedad == "Transportista" ? "Transportista (dueño)" : "Transportista habitual")</dt>
+                        @if (Model.IdTransportista.HasValue)
+                        {
+                            <dd><a href="@Url.Action("Detalle", "Transportistas", new { id = Model.IdTransportista.Value })">@Model.Transportista</a></dd>
+                        }
+                        else
+                        {
+                            <dd class="vacio">Sin transportista habitual</dd>
+                        }
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="tarjeta-ep h-100 mb-0">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-trailer"></i> Características</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <dl class="datos-ep">
+                    <div><dt>Número de caja</dt><dd>@Model.NumeroCaja</dd></div>
+                    <div><dt>Placa</dt>@if (Model.Placa != null) { <dd>@Model.Placa</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div><dt>VIN</dt>@if (Model.Vin != null) { <dd>@Model.Vin</dd> } else { <dd class="vacio">Sin capturar</dd> }</div>
+                    <div><dt>Año</dt>@if (Model.Anio.HasValue) { <dd>@Model.Anio.Value</dd> } else { <dd class="vacio">—</dd> }</div>
+                    <div><dt>Marca</dt>@if (Model.Marca != null) { <dd>@Model.Marca</dd> } else { <dd class="vacio">—</dd> }</div>
+                    <div><dt>Pies</dt>@if (Model.Pies.HasValue) { <dd>@Model.Pies.Value ft</dd> } else { <dd class="vacio">—</dd> }</div>
+                    <div><dt>Alta</dt><dd>@(Model.FechaCreacion.HasValue ? Model.FechaCreacion.Value.ToString("dd/MM/yyyy") : "—")</dd></div>
+                    <div><dt>Última modificación</dt><dd>@(Model.FechaModificacion.HasValue ? Model.FechaModificacion.Value.ToString("dd/MM/yyyy HH:mm") : "—")</dd></div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

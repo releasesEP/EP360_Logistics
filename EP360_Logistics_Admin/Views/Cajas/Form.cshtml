@@ -1,0 +1,131 @@
+@model EP360_Logistics_Admin.Models.CajaModel
+@{
+    bool esNueva = Model.IdCaja == 0;
+    ViewBag.Title = esNueva ? "Nueva caja" : "Editar caja";
+    var tipos = new[]
+    {
+        new { Valor = "Cliente", Icono = "fa-building", Titulo = "De un cliente", Texto = "Se liga a un grupo de cuentas o a una cuenta." },
+        new { Valor = "Transportista", Icono = "fa-truck-fast", Titulo = "De un transportista", Texto = "La caja es propiedad de la línea." },
+        new { Valor = "EP", Icono = "fa-warehouse", Titulo = "Propia de EP", Texto = "Trailer de EP Logistics." }
+    };
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@(esNueva ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdCaja }))" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-trailer"></i>@ViewBag.Title</h3>
+            <p>@(esNueva ? "El número se guarda en mayúsculas, sin espacios ni guiones." : "Caja " + Model.NumeroCaja)</p>
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.IdCaja)
+    <div class="form-ep">
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> ¿De quién es la caja?</div>
+                <div class="opciones-tarjeta mb-3">
+                    @foreach (var t in tipos)
+                    {
+                        <label class="opcion-tarjeta">
+                            <input type="radio" name="TipoPropiedad" value="@t.Valor" @(Model.TipoPropiedad == t.Valor ? "checked" : "") />
+                            <span class="opcion-caja"><i class="fas @t.Icono"></i><span><strong>@t.Titulo</strong><small>@t.Texto</small></span></span>
+                        </label>
+                    }
+                </div>
+                @Html.ValidationMessageFor(m => m.TipoPropiedad, null, new { @class = "error-campo" })
+                <div class="row g-3">
+                    <div class="col-md-6" data-mostrar-si="TipoPropiedad=Cliente">
+                        @Html.LabelFor(m => m.IdGrupoCuenta)
+                        @Html.DropDownListFor(m => m.IdGrupoCuenta, (IEnumerable<SelectListItem>)ViewBag.Grupos, "(ninguno)", new { @class = "form-select", id = "idGrupoCuenta" })
+                        <div class="form-text">Lo normal: la caja es del cliente completo.</div>
+                    </div>
+                    <div class="col-md-6" data-mostrar-si="TipoPropiedad=Cliente">
+                        @Html.LabelFor(m => m.IdCuenta)
+                        @Html.DropDownListFor(m => m.IdCuenta, (IEnumerable<SelectListItem>)ViewBag.Cuentas, "(ninguna)", new { @class = "form-select", id = "idCuenta" })
+                        <div class="form-text">Solo si el cliente no tiene grupo. Grupo o cuenta, no ambos.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="idTransportista" id="etiquetaTransportista">Transportista</label>
+                        @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "(ninguno)", new { @class = "form-select", id = "idTransportista" })
+                        <div class="form-text" id="notaTransportista"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">2</span> Identificación</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.NumeroCaja)
+                        @Html.TextBoxFor(m => m.NumeroCaja, new { @class = "form-control", autofocus = "autofocus" })
+                        @Html.ValidationMessageFor(m => m.NumeroCaja, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Placa)
+                        @Html.TextBoxFor(m => m.Placa, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Vin)
+                        @Html.TextBoxFor(m => m.Vin, new { @class = "form-control", maxlength = "20" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">3</span> Características</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Anio)
+                        @Html.TextBoxFor(m => m.Anio, new { @class = "form-control", type = "number", min = "1950", max = "2100" })
+                        @Html.ValidationMessageFor(m => m.Anio, null, new { @class = "error-campo" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Marca)
+                        @Html.TextBoxFor(m => m.Marca, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.Pies)
+                        @Html.TextBoxFor(m => m.Pies, new { @class = "form-control", type = "number", min = "1", max = "255", placeholder = "53" })
+                        @Html.ValidationMessageFor(m => m.Pies, null, new { @class = "error-campo" })
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@(esNueva ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdCaja }))">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    </div>
+}
+
+@section scripts {
+    <script>
+        // Grupo o cuenta, nunca los dos (el SP lo valida de todos modos: CK_Caja_propietario), y la
+        // etiqueta del transportista cambia segun si es el dueno o solo quien la mueve.
+        (function () {
+            var grupo = document.getElementById("idGrupoCuenta");
+            var cuenta = document.getElementById("idCuenta");
+            var etiqueta = document.getElementById("etiquetaTransportista");
+            var nota = document.getElementById("notaTransportista");
+
+            function actualizar() {
+                var marcado = document.querySelector("input[name='TipoPropiedad']:checked");
+                var tipo = marcado ? marcado.value : "";
+                etiqueta.textContent = tipo === "Transportista" ? "Transportista (dueño)" : "Transportista habitual";
+                nota.textContent = tipo === "Transportista" ? "Obligatorio: la caja es de este transportista." : "Opcional: quien normalmente la mueve.";
+            }
+
+            grupo.addEventListener("change", function () { if (grupo.value) cuenta.value = ""; });
+            cuenta.addEventListener("change", function () { if (cuenta.value) grupo.value = ""; });
+            document.querySelectorAll("input[name='TipoPropiedad']").forEach(function (r) { r.addEventListener("change", actualizar); });
+            actualizar();
+        })();
+    </script>
+}

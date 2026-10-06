@@ -38,5 +38,12 @@ namespace EP360_Logistics_Admin.Controllers
             id = resultado;
             return ok;
         }
+
+        // Despues de una accion desde un listado, regresa a la misma pagina con los mismos filtros.
+        // Solo se aceptan URLs locales (evita redirecciones abiertas).
+        protected ActionResult Volver(string returnUrl, ActionResult porOmision)
+        {
+            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : porOmision;
+        }
     }
 }
