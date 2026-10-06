@@ -8,6 +8,8 @@ namespace EP360_Logistics_Admin.Models
         public int IdPortal { get; set; }
         public string Clave { get; set; }
         public string Nombre { get; set; }
+        // Los usuarios externos (clientes) solo entran a los portales publicos.
+        public bool PermiteExternos { get; set; }
     }
 
     public class EstadoBaseModel

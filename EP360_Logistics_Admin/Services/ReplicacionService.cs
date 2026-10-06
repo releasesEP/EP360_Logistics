@@ -30,6 +30,8 @@ namespace EP360_Logistics_Admin.Services
             { "dir.sp_ActualizarGrupoCuenta", "Edición de grupo de cuentas" },
             { "dir.sp_DesactivarGrupoCuenta", "Baja de grupo de cuentas" },
             { "dir.sp_ReactivarGrupoCuenta", "Reactivación de grupo de cuentas" },
+            { "dir.sp_OtorgarAccesoPortal", "Acceso a un portal otorgado" },
+            { "dir.sp_RevocarAccesoPortal", "Acceso a un portal retirado" },
             { "seg.sp_FijarPasswordCredencial", "Contraseña de usuario externo" },
             { "sync.sp_IniciarSincronizacionAD", "Inicio de sincronización con AD" },
             { "sync.sp_SincronizarUsuarioAD", "Usuario de AD sincronizado" },
