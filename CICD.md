@@ -32,7 +32,7 @@ Flujo: `dev` (trabajo) -> Pull Request -> `prod` (despliegue). `kevs` y `magdas`
 |---|---|
 | `RUTA_SITIO_IIS` | `C:\inetpub\Aplicaciones\EP360Logistics\Produccion` |
 | `NOMBRE_APP_POOL` | `ep360logistics` |
-| `URL_PRUEBA_HUMO` | URL del binding real del sitio |
+| `URL_PRUEBA_HUMO` | `http://ep360logistics.eplogistics.com/` |
 
 No hay secretos en GitHub: la configuracion real vive en el servidor.
 
