@@ -1,0 +1,210 @@
+name: CD - Desplegar a IIS (prod)
+
+# Corre con push a la rama prod (o sea, cuando se mergea dev -> prod).
+# Dos jobs a proposito: "compilar" corre en la nube de GitHub (ya trae MSBuild; el servidor real no
+# necesita Visual Studio) y "desplegar" corre en el runner self-hosted del servidor de IIS y SOLO
+# copia el resultado ya compilado.
+#
+# Variables del repo (Settings > Secrets and variables > Actions > Variables):
+#   RUTA_SITIO_IIS   ruta fisica del sitio   (C:\inetpub\Aplicaciones\EP360Logistics\Produccion)
+#   NOMBRE_APP_POOL  application pool        (ep360logistics)
+#   URL_PRUEBA_HUMO  URL para la prueba de humo (el binding real del sitio)
+#
+# La configuracion real NO viaja en el artefacto ni se escribe desde aqui: ConnectionStrings.config y
+# AppSettings.config viven solo en el servidor (dentro de RUTA_SITIO_IIS) y el Robocopy los excluye.
+# Cada valor de AppSettings tambien se puede sobreescribir con una variable de entorno de MAQUINA.
+on:
+  push:
+    branches: [ prod ]
+
+jobs:
+  compilar:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      # Web.config usa configSource: sin estos archivos el build truena. Son solo relleno para compilar.
+      - name: Crear configs con relleno (solo para que exista el archivo)
+        shell: powershell
+        run: |
+          $p = "EP360_Logistics_Admin"
+          Copy-Item "$p\ConnectionStrings.config.example" "$p\ConnectionStrings.config"
+          Copy-Item "$p\AppSettings.config.example" "$p\AppSettings.config"
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar (Release)
+        run: msbuild EP360_Logistics_Admin/EP360_Logistics_Admin.csproj /restore /p:Configuration=Release /nologo /v:minimal
+
+      - name: Validar vistas Razor (aspnet_compiler)
+        shell: powershell
+        run: |
+          $compilador = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe"
+          & $compilador -v / -p "EP360_Logistics_Admin" "$env:RUNNER_TEMP\vistas_compiladas"
+          if ($LASTEXITCODE -ne 0) { throw "aspnet_compiler encontro errores en las vistas." }
+
+      # Carpeta limpia con solo lo que vive en el servidor (sin .cs/.csproj/obj ni los .example).
+      - name: Preparar carpeta de publicacion
+        shell: cmd
+        run: |
+          robocopy "EP360_Logistics_Admin" "publicar" /MIR /XD ".git" ".github" ".vs" "obj" /XF "*.cs" "*.csproj" "*.csproj.user" "*.example" "packages.config" "errores.log"
+          if %ERRORLEVEL% GEQ 8 (exit /b 1) else (exit /b 0)
+
+      # Un build normal de MSBuild no aplica Web.Release.config; sin esto prod corre con debug="true".
+      # Se parchea solo en la copia que se despliega.
+      - name: Apagar modo debug en la copia que se despliega
+        shell: powershell
+        run: |
+          $ruta = Resolve-Path "publicar\Web.config"
+          $xml = New-Object System.Xml.XmlDocument
+          $xml.Load($ruta)
+          $nodo = $xml.SelectSingleNode("//system.web/compilation")
+          $nodo.SetAttribute("debug", "false")
+          $xml.Save($ruta)
+          Write-Output "debug quedo en: $($nodo.GetAttribute('debug'))"
+
+      - name: Subir resultado compilado como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitio-publicado
+          path: publicar
+          retention-days: 1
+
+  desplegar:
+    needs: compilar
+    # La etiqueta propia evita que otro runner del servidor tome este job.
+    runs-on: [self-hosted, eplogistics]
+    # actions: write solo para que el ultimo paso borre el artefacto ya usado (cuota de Actions storage).
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      # Sin acentos ni em-dash en los bloques de PowerShell: en el runner el .ps1 temporal se corrompe.
+      - name: Verificar variables y crear configs si faltan
+        shell: powershell
+        run: |
+          $sitio = "${{ vars.RUTA_SITIO_IIS }}"
+          if (-not $sitio) { throw "Falta la variable RUTA_SITIO_IIS del repo." }
+          if (-not "${{ vars.NOMBRE_APP_POOL }}") { throw "Falta la variable NOMBRE_APP_POOL del repo." }
+          if (-not "${{ vars.URL_PRUEBA_HUMO }}") { throw "Falta la variable URL_PRUEBA_HUMO del repo." }
+          New-Item -ItemType Directory -Force -Path $sitio | Out-Null
+          # Los .config reales viven solo en el servidor. Si no existen (primer deploy) se crean aqui
+          # sin secretos (Integrated Security); si ya existen NO se tocan.
+          $conn = Join-Path $sitio "ConnectionStrings.config"
+          if (-not (Test-Path $conn)) {
+            $xml = '<?xml version="1.0" encoding="utf-8"?>' + "`r`n" +
+              '<connectionStrings>' + "`r`n" +
+              '  <add name="CadenaSQL" connectionString="Data Source=192.168.50.60,5003;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True" providerName="System.Data.SqlClient" />' + "`r`n" +
+              '</connectionStrings>'
+            Set-Content -Path $conn -Value $xml -Encoding UTF8
+            Write-Output "Creado ConnectionStrings.config (primer deploy)."
+          }
+          $app = Join-Path $sitio "AppSettings.config"
+          if (-not (Test-Path $app)) {
+            $xml = '<?xml version="1.0" encoding="utf-8"?>' + "`r`n" +
+              '<appSettings>' + "`r`n" +
+              '  <add key="AD_Servidor" value="" />' + "`r`n" +
+              '  <add key="AD_Usuario" value="" />' + "`r`n" +
+              '  <add key="AD_Password" value="" />' + "`r`n" +
+              '  <add key="AD_GrupoAdmins" value="ep360admins" />' + "`r`n" +
+              '  <add key="EmailSmtpServidor" value="smtp.office365.com" />' + "`r`n" +
+              '  <add key="EmailSmtpPuerto" value="587" />' + "`r`n" +
+              '  <add key="EmailSmtpUsuario" value="noreplyep@eplogistics.com" />' + "`r`n" +
+              '  <add key="EmailSmtpPassword" value="" />' + "`r`n" +
+              '</appSettings>'
+            Set-Content -Path $app -Value $xml -Encoding UTF8
+            Write-Output "Creado AppSettings.config (primer deploy)."
+          }
+
+      # Respaldo del sitio antes de tocar nada. Se guardan los ultimos 5 en una carpeta hermana
+      # del sitio, fuera de RUTA_SITIO_IIS para que el Robocopy /MIR no los borre.
+      - name: Respaldar el sitio actual
+        shell: powershell
+        run: |
+          $sitio = "${{ vars.RUTA_SITIO_IIS }}"
+          $destino = Join-Path (Split-Path $sitio -Parent) "respaldos_eplogistics"
+          New-Item -ItemType Directory -Force -Path $destino | Out-Null
+          $zip = Join-Path $destino ("sitio_{0}.zip" -f (Get-Date -Format "yyyyMMdd_HHmmss"))
+          Compress-Archive -Path (Join-Path $sitio "*") -DestinationPath $zip -Force
+          Write-Output "Respaldo creado: $zip"
+          Get-ChildItem $destino -Filter "sitio_*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -Skip 5 | Remove-Item -Force
+
+      # app_offline.htm es nativo de ASP.NET: mientras exista en la raiz, toda peticion recibe esta
+      # pagina. No hace falta parar el pool.
+      - name: Activar pagina de mantenimiento
+        shell: powershell
+        run: |
+          $html = @"
+          <!DOCTYPE html>
+          <html lang="es">
+          <head><meta charset="utf-8" /><title>EP360 Logistics</title>
+          <style>
+            body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+                   background:#0B1B3D; color:#DCE4F5; font-family:"Segoe UI",system-ui,sans-serif; text-align:center; }
+          </style></head>
+          <body><div><h1>EP360 Logistics</h1><p>Estamos actualizando el sistema. Volvemos en un momento.</p></div></body>
+          </html>
+          "@
+          Set-Content -Path "${{ vars.RUTA_SITIO_IIS }}\app_offline.htm" -Value $html -Encoding UTF8
+          Start-Sleep -Seconds 3
+
+      - name: Descargar el resultado compilado
+        uses: actions/download-artifact@v4
+        with:
+          name: sitio-publicado
+          path: descargado
+
+      # /MIR deja destino = origen. Se EXCLUYEN los .config con secretos y App_Data (solo existen en
+      # el servidor real); /XF y /XD tambien los protegen de la purga de /MIR. app_offline.htm no esta
+      # en "descargado", asi que /MIR lo borra y la app vuelve a servir.
+      - name: Copiar archivos al sitio (Robocopy)
+        shell: cmd
+        run: |
+          robocopy "descargado" "${{ vars.RUTA_SITIO_IIS }}" /MIR /XD "App_Data" /XF "ConnectionStrings.config" "AppSettings.config" "errores.log" /R:3 /W:5
+          if %ERRORLEVEL% GEQ 8 (exit /b 1) else (exit /b 0)
+
+      - name: Reciclar el application pool
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          Restart-WebAppPool -Name "${{ vars.NOMBRE_APP_POOL }}"
+          Start-Sleep -Seconds 5
+          Write-Output "Estado del pool: $((Get-WebAppPoolState -Name "${{ vars.NOMBRE_APP_POOL }}").Value)"
+          if (Test-Path "${{ vars.RUTA_SITIO_IIS }}\app_offline.htm") { throw "app_offline.htm sigue presente." }
+
+      # La app usa autenticacion de Windows: un 401/403 tambien prueba que IIS y la app responden.
+      # Solo 5xx, 404 o sin respuesta cuentan como falla (un 500 seria error de la app o de la BD).
+      - name: Prueba de humo HTTP
+        shell: powershell
+        run: |
+          $url = "${{ vars.URL_PRUEBA_HUMO }}"
+          $codigo = 0
+          for ($i = 1; $i -le 6; $i++) {
+            try {
+              $r = Invoke-WebRequest -Uri $url -UseDefaultCredentials -UseBasicParsing -TimeoutSec 30
+              $codigo = [int]$r.StatusCode
+            } catch {
+              if ($_.Exception.Response) { $codigo = [int]$_.Exception.Response.StatusCode } else { $codigo = 0 }
+            }
+            Write-Output "Intento $i : $url -> HTTP $codigo"
+            if ($codigo -in 200, 301, 302, 401, 403) { break }
+            Start-Sleep -Seconds 10
+          }
+          if (-not ($codigo -in 200, 301, 302, 401, 403)) { throw "Prueba de humo fallida (HTTP $codigo)." }
+
+      # Borra el artefacto ya usado para no ocupar la cuota compartida de Actions storage.
+      # if: success() para poder reintentar sin recompilar si algo de arriba fallo.
+      - name: Borrar el artefacto ya usado (libera cuota de Actions storage)
+        if: success()
+        shell: powershell
+        run: |
+          $headers = @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}"; Accept = "application/vnd.github+json" }
+          $artefactos = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
+          foreach ($artefacto in $artefactos.artifacts) {
+            Invoke-RestMethod -Headers $headers -Method Delete -Uri $artefacto.url
+            Write-Output "Artefacto borrado: $($artefacto.name) ($($artefacto.size_in_bytes) bytes)"
+          }
