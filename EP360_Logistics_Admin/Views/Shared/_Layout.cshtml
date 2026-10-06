@@ -21,7 +21,8 @@
     var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos" };
     var areaFlota = new[] { "Cajas", "Transportistas", "Tractores", "Choferes" };
     Func<string, string> activo = c => controlador == c ? "activo" : "";
-    string area = areaDirectorio.Contains(controlador) ? "Directorio" : areaFlota.Contains(controlador) ? "Flota" : controlador == "Sincronizacion" ? "Sistema" : null;
+    string area = areaDirectorio.Contains(controlador) ? "Directorio" : areaFlota.Contains(controlador) ? "Flota" : (controlador == "Sincronizacion" || controlador == "Replicacion") ? "Sistema" : null;
+    string alertaReplicacion = EP360_Logistics_Admin.Helpers.AlertaReplicacion.Texto();
     string usuario = User.Identity.Name ?? "";
     string usuarioCorto = usuario.Contains("\\") ? usuario.Substring(usuario.IndexOf('\\') + 1) : usuario;
 }
@@ -129,6 +130,11 @@
                     <span class="menu-enlace-icono"><i class="fas fa-rotate"></i></span>
                     <span class="menu-enlace-texto"><strong>Sincronización con AD</strong><small>Trae los usuarios del dominio</small></span>
                     <i class="fas fa-chevron-right menu-enlace-flecha"></i>
+                </a>
+                <a class="menu-enlace @activo("Replicacion")" style="--i:9" href="@Url.Action("Index", "Replicacion")">
+                    <span class="menu-enlace-icono"><i class="fas fa-database"></i></span>
+                    <span class="menu-enlace-texto"><strong>Copia en el 11</strong><small>@(alertaReplicacion ?? "Replicación del 60 al servidor 11")</small></span>
+                    @if (alertaReplicacion != null) { <i class="fas fa-circle-exclamation" style="color:#c0392b;" title="@alertaReplicacion"></i> } else { <i class="fas fa-chevron-right menu-enlace-flecha"></i> }
                 </a>
             </nav>
 

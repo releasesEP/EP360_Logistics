@@ -1,0 +1,98 @@
+@model EP360_Logistics_Admin.Models.OperacionReplicacionModel
+@{
+    ViewBag.Title = "Operación #" + Model.IdCola;
+    string pastillaEstado = Model.Estado == "Aplicada" ? "pastilla-verde" : (Model.Estado == "Divergente" ? "pastilla-rojo" : "pastilla-ambar");
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver a la copia en el 11" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-receipt"></i>Operación #@Model.IdCola <span class="pastilla @pastillaEstado ms-2">@Model.Estado</span></h3>
+            <p>@Model.Descripcion</p>
+        </div>
+    </div>
+    @if (Model.PuedeOmitir)
+    {
+        <div class="encabezado-acciones">
+            @using (Html.BeginForm("Reintentar", "Replicacion", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-corporativo"><i class="fas fa-rotate"></i> Reintentar ahora</button>
+            }
+            @using (Html.BeginForm("Omitir", "Replicacion", new { id = Model.IdCola }, FormMethod.Post, new
+            {
+                data_confirmar = "¿Omitir esta operación?",
+                data_confirmar_detalle = "Queda sin copiar: el 11 puede quedar distinto al 60 en lo que cambiaba. Úsalo solo si ya corregiste ese dato en el 11 o ya no importa.",
+                data_confirmar_boton = "Sí, omitir"
+            }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-peligro-suave"><i class="fas fa-forward"></i> Omitir</button>
+            }
+        </div>
+    }
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="tarjeta-ep mb-3">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-circle-question"></i> Qué significa y qué hacer</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <p class="mb-2"><b>Qué significa:</b> @Model.QueSignifica</p>
+                <p class="mb-0"><b>Qué hacer:</b> @Model.QueHacer</p>
+            </div>
+        </div>
+
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-database"></i> Datos de la operación</h6></div>
+            <div class="tarjeta-ep-cuerpo">
+                <dl class="datos-ep">
+                    <div><dt>Procedimiento</dt><dd>@Model.Procedimiento</dd></div>
+                    <div><dt>La hizo</dt><dd>@(Model.Usuario ?? "—")</dd></div>
+                    <div><dt>Fecha</dt><dd>@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm:ss")</dd></div>
+                    <div><dt>Intentos en el 11</dt><dd>@Model.Intentos@(Model.FechaUltimoIntento.HasValue ? " (último: " + Model.FechaUltimoIntento.Value.ToString("dd/MM/yyyy HH:mm:ss") + ")" : "")</dd></div>
+                    <div><dt>Resultado que dio el 60</dt><dd>@(Model.ResultadoMaestro ?? "—")</dd></div>
+                    @if (Model.FechaAplicada.HasValue)
+                    {
+                        <div><dt>Resuelta</dt><dd>@Model.FechaAplicada.Value.ToString("dd/MM/yyyy HH:mm:ss")@(Model.ResueltaPor != null ? " por " + Model.ResueltaPor : "")</dd></div>
+                    }
+                </dl>
+                @if (!string.IsNullOrEmpty(Model.UltimoError))
+                {
+                    <p class="fw-semibold small mt-3 mb-1">Último error</p>
+                    <pre class="detalle-error">@Model.UltimoError</pre>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-list"></i> Con qué datos</h6></div>
+            @if (Model.Parametros != null && Model.Parametros.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="tabla-ep">
+                        <thead><tr><th>Parámetro</th><th>Valor</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Model.Parametros)
+                            {
+                                <tr><td class="small"><code>@p.Key</code></td><td class="small">@p.Value</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tarjeta-ep-pie small texto-secundario"><i class="fas fa-lock me-1"></i>Las contraseñas y hashes se muestran ocultos.</div>
+            }
+            else
+            {
+                <div class="vacio-ep">
+                    <div class="vacio-icono"><i class="fas fa-eraser"></i></div>
+                    <h6>Sin datos guardados</h6>
+                    <p>Al resolverse una operación se borran sus datos de la cola (pueden incluir hashes de contraseña).</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
