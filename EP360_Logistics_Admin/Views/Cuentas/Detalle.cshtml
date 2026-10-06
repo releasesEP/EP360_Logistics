@@ -1,4 +1,4 @@
-@model EP360_Logistics_Admin.Models.CuentaModel
+﻿@model EP360_Logistics_Admin.Models.CuentaModel
 @{
     ViewBag.Title = Model.NombreComercial;
     var personas = (List<PersonaCuentaModel>)ViewBag.Personas;
@@ -47,7 +47,7 @@
         </div>
     </div>
     <div class="perfil-acciones">
-        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdCuenta })"><i class="fas fa-pen"></i> Editar</a>
+        <a data-modal="lg" class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdCuenta })"><i class="fas fa-pen"></i> Editar</a>
         @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Cuentas", new { id = Model.IdCuenta }, FormMethod.Post, new
         {
             data_confirmar = Model.Activo ? "¿Desactivar la cuenta " + Model.NombreComercial + "?" : "¿Reactivar la cuenta " + Model.NombreComercial + "?",
@@ -67,7 +67,7 @@
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-address-book"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@personas.Count</div></div></div>
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@cajas.Count</div><span class="kpi-tile-detalle">de la cuenta y de su grupo</span></div></div>
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@cajas.Where(k => k.IdTransportista.HasValue).Select(k => k.IdTransportista).Distinct().Count()</div><span class="kpi-tile-detalle">mueven sus cajas</span></div></div>
-    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Con acceso</div><div class="kpi-tile-valor">@personas.Count(p => p.TipoPersona == "Externo")</div><span class="kpi-tile-detalle">contactos que son usuarios externos</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Con acceso</div><div class="kpi-tile-valor">@personas.Count(p => p.TipoPersona == "Externo")</div><span class="kpi-tile-detalle">contactos que son usuarios externos</span></div></div>
 </div>
 
 <ul class="nav pestanas-ep" role="tablist">
@@ -208,7 +208,7 @@
                         <div class="col-md-2"><input type="text" name="puestoEnCuenta" class="form-control" placeholder="Puesto" maxlength="120" /></div>
                         <div class="col-md-2 d-grid"><button type="submit" class="btn-corporativo"><i class="fas fa-link"></i> Ligar</button></div>
                     }
-                    <p class="ayuda-campo mt-2 mb-0">¿No está en la lista? <a href="@Url.Action("Crear", "Personas")">Da de alta a la persona</a> y ligala aquí. Solo aparecen contactos y usuarios externos.</p>
+                    <p class="ayuda-campo mt-2 mb-0">¿No está en la lista? <a data-modal="lg" href="@Url.Action("Crear", "Personas")">Da de alta a la persona</a> y ligala aquí. Solo aparecen contactos y usuarios externos.</p>
                 </div>
             }
         </div>
@@ -276,7 +276,7 @@
                 </div>
             }
             <div class="tarjeta-ep-pie d-flex flex-wrap gap-2">
-                <a class="btn-suave btn-sm-ep" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-plus"></i> Nueva caja</a>
+                <a data-modal="lg" class="btn-suave btn-sm-ep" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-plus"></i> Nueva caja</a>
                 @if (Model.IdGrupoCuenta.HasValue)
                 {
                     <a class="btn-suave btn-sm-ep" href="@Url.Action("Index", "Cajas", new { idGrupoCuenta = Model.IdGrupoCuenta })"><i class="fas fa-list"></i> Ver en el listado de cajas</a>

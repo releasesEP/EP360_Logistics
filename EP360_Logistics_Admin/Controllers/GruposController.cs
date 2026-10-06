@@ -73,33 +73,33 @@ namespace EP360_Logistics_Admin.Controllers
 
         public ActionResult Crear()
         {
-            return View("Form", new GrupoCuentaModel());
+            return VistaFormulario("Form", "_Modal", new GrupoCuentaModel());
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Crear(GrupoCuentaModel modelo)
         {
-            if (!ModelState.IsValid) return View("Form", modelo);
+            if (!ModelState.IsValid) return VistaFormulario("Form", "_Modal", modelo);
             int id;
             return EjecutarConId(() => _servicio.Crear(modelo), "Grupo creado. Ahora agrégale sus cuentas.", out id)
-                ? (ActionResult)RedirectToAction("Detalle", new { id })
-                : View("Form", modelo);
+                ? ExitoFormulario(Url.Action("Detalle", new { id }))
+                : VistaFormulario("Form", "_Modal", modelo);
         }
 
         public ActionResult Editar(int id)
         {
             var modelo = _servicio.ObtenerPorId(id);
             if (modelo == null) return HttpNotFound();
-            return View("Form", modelo);
+            return VistaFormulario("Form", "_Modal", modelo);
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult Editar(GrupoCuentaModel modelo)
         {
-            if (!ModelState.IsValid) return View("Form", modelo);
+            if (!ModelState.IsValid) return VistaFormulario("Form", "_Modal", modelo);
             return Ejecutar(() => _servicio.Actualizar(modelo), "Grupo actualizado.")
-                ? (ActionResult)RedirectToAction("Detalle", new { id = modelo.IdGrupoCuenta })
-                : View("Form", modelo);
+                ? ExitoFormulario(Url.Action("Detalle", new { id = modelo.IdGrupoCuenta }))
+                : VistaFormulario("Form", "_Modal", modelo);
         }
 
         [HttpPost, ValidateAntiForgeryToken]
