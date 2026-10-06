@@ -6,11 +6,12 @@
    Da a la app de administracion global (EP360_Logistics_Admin) el acceso que necesita a la base global. Esta app SI escribe (altas,
    accesos, sucursales, sincronizacion con AD, replicacion), pero siempre a traves de procedimientos: no se le da db_owner.
 
-   QUE PONER EN @cuenta (la identidad con la que la app entra a SQL Server):
-     * En el 60 (la app corre aqui):  el Application Pool del sitio, por ejemplo  IIS APPPOOL\ep360logistics
+   QUE PONER EN @cuenta (la identidad con la que la app entra a SQL Server). La app corre en el servidor 11 (ver CICD.md):
+     * En el 60 (la base maestra, a la que la app llega por red):  la CUENTA DE MAQUINA del 11, no el pool. Un pool con
+       ApplicationPoolIdentity sale a la red como  DOMINIO\NOMBRE_DEL_SERVIDOR$ ; el nombre NetBIOS se corta a 15 caracteres:
+       EPLOGISTICS\EPL1-APPSERVER0$   (ese login YA existe en el 60; el script solo agrega el usuario y los permisos).
+     * En el 11 (la copia, local a la app):  el Application Pool del sitio, IIS APPPOOL\ep360logistics
        (el pool debe existir ya en IIS: SQL Server solo crea el login si Windows conoce la cuenta).
-     * En el 11 (donde la app escribe la copia):  la CUENTA DE MAQUINA del servidor 60, no el pool. Un pool con ApplicationPoolIdentity
-       sale a la red como  DOMINIO\NOMBRE_DEL_SERVIDOR$  (con el signo $ al final), por ejemplo  EPLOGISTICS\EPL1-EP360SERVER$.
 
    Es IDEMPOTENTE: crea el login y el usuario solo si faltan, y repetir los GRANT no cambia nada.
    Es UN SOLO BLOQUE (sin GO), asi que el valor de @cuenta aplica a todo.

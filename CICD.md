@@ -42,13 +42,23 @@ No hay secretos en GitHub: la configuracion real vive en el servidor.
 
 - `ConnectionStrings.config`: `Data Source=192.168.50.60,5003;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True` (identidad del pool).
 - `AppSettings.config`: `AD_GrupoAdmins=ep360admins`; correo con las llaves `EmailSmtp*`.
-- Cada valor de AppSettings se puede sobreescribir con una variable de entorno de **maquina** del mismo nombre (correo: `EMAIL_SMTP_*`). Tambien se leen de maquina `DB_CONNECTION_STRING` y `DB_CONNECTION_STRING_REPLICA` (opcional, replica al 11); este workflow **no** las escribe.
+- Cada valor de AppSettings se puede sobreescribir con una variable de entorno de **maquina** del mismo nombre (correo: `EMAIL_SMTP_*`). Tambien se leen de maquina `EP360LOGISTICS_CONNECTION_STRING` y `EP360LOGISTICS_CONNECTION_STRING_REPLICA` (la segunda es opcional); este workflow **no** las escribe. Los nombres son **propios** a proposito (el codigo antes leia `DB_CONNECTION_STRING`): en el 11 viven mas apps (Help Desk, Intranet, EPTemplates, Startpoint, ...) y si alguna define esa variable de maquina, esta app se conectaria a SU base.
+
+### Replicacion al 11 (opcional)
+
+La app escribe primero en el 60 (maestro) y repite en la copia del 11, que es **local** a este servidor. Para activarla, agregar en el `ConnectionStrings.config` **del servidor** (el CD no lo toca) la linea:
+
+```xml
+<add name="CadenaSQLReplica" connectionString="Data Source=192.168.50.11;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True" providerName="System.Data.SqlClient" />
+```
+
+Sin esa linea (ni la variable de maquina) escribe solo en el 60. Antes hay que correr en las dos bases los scripts `Database/10`, `10c` y `11c`. El estado se ve en la pantalla **Copia en el 11**.
 
 ## Permisos y tropiezos conocidos
 
 1. `NETWORK SERVICE` debe estar en Administradores locales del servidor (`net localgroup Administrators`): lo necesitan `Restart-WebAppPool` y, si algun dia se escriben variables de maquina, el registro (`Requested registry access is not allowed`).
 2. IIS no ve variables de maquina nuevas hasta un `iisreset`; reciclar el pool no basta.
-3. El login SQL del pool (`IIS APPPOOL\ep360logistics`, o la cuenta de dominio/equipo con que se conecte al .60) debe existir en `192.168.50.60\ep360` con permisos sobre `EP360_Logistics` (lectura/escritura + `EXECUTE` en sus SPs).
+3. Permisos SQL (`Database/12b_PermisosAppGlobal.sql`, se corre en las dos bases cambiando `@cuenta`): en el **60** la app entra con la **cuenta de maquina del 11**, `EPLOGISTICS\EPL1-APPSERVER0$` (el nombre se corta a 15 caracteres y lleva `$`; ese login **ya existe** en el 60, falta su usuario y permisos en `EP360_Logistics`); en el **11** (la copia es local) entra el pool, `IIS APPPOOL\ep360logistics`. Son SELECT y EXECUTE sobre los esquemas `dir`, `seg`, `sync` y `flota`, sin `db_owner`.
 4. La prueba de humo acepta 200/301/302/401/403 (la app usa autenticacion de Windows); 404, 5xx o sin respuesta fallan el despliegue.
 5. El artefacto se borra al terminar (cuota de Actions storage de la org).
 6. Rollback: descomprimir el ultimo `sitio_*.zip` de `respaldos_eplogistics` sobre el sitio.
