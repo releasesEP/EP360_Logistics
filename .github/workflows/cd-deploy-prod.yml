@@ -84,17 +84,40 @@ jobs:
 
     steps:
       # Sin acentos ni em-dash en los bloques de PowerShell: en el runner el .ps1 temporal se corrompe.
-      - name: Verificar variables y configuracion del servidor
+      - name: Verificar variables y crear configs si faltan
         shell: powershell
         run: |
           $sitio = "${{ vars.RUTA_SITIO_IIS }}"
           if (-not $sitio) { throw "Falta la variable RUTA_SITIO_IIS del repo." }
           if (-not "${{ vars.NOMBRE_APP_POOL }}") { throw "Falta la variable NOMBRE_APP_POOL del repo." }
           if (-not "${{ vars.URL_PRUEBA_HUMO }}") { throw "Falta la variable URL_PRUEBA_HUMO del repo." }
-          foreach ($archivo in "ConnectionStrings.config", "AppSettings.config") {
-            if (-not (Test-Path (Join-Path $sitio $archivo))) {
-              throw "No existe $archivo en $sitio. Crealo a mano en el servidor desde su .example (no va en git ni en el artefacto)."
-            }
+          New-Item -ItemType Directory -Force -Path $sitio | Out-Null
+          # Los .config reales viven solo en el servidor. Si no existen (primer deploy) se crean aqui
+          # sin secretos (Integrated Security); si ya existen NO se tocan.
+          $conn = Join-Path $sitio "ConnectionStrings.config"
+          if (-not (Test-Path $conn)) {
+            $xml = '<?xml version="1.0" encoding="utf-8"?>' + "`r`n" +
+              '<connectionStrings>' + "`r`n" +
+              '  <add name="CadenaSQL" connectionString="Data Source=192.168.50.60,5003;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True" providerName="System.Data.SqlClient" />' + "`r`n" +
+              '</connectionStrings>'
+            Set-Content -Path $conn -Value $xml -Encoding UTF8
+            Write-Output "Creado ConnectionStrings.config (primer deploy)."
+          }
+          $app = Join-Path $sitio "AppSettings.config"
+          if (-not (Test-Path $app)) {
+            $xml = '<?xml version="1.0" encoding="utf-8"?>' + "`r`n" +
+              '<appSettings>' + "`r`n" +
+              '  <add key="AD_Servidor" value="" />' + "`r`n" +
+              '  <add key="AD_Usuario" value="" />' + "`r`n" +
+              '  <add key="AD_Password" value="" />' + "`r`n" +
+              '  <add key="AD_GrupoAdmins" value="ep360admins" />' + "`r`n" +
+              '  <add key="EmailSmtpServidor" value="smtp.office365.com" />' + "`r`n" +
+              '  <add key="EmailSmtpPuerto" value="587" />' + "`r`n" +
+              '  <add key="EmailSmtpUsuario" value="noreplyep@eplogistics.com" />' + "`r`n" +
+              '  <add key="EmailSmtpPassword" value="" />' + "`r`n" +
+              '</appSettings>'
+            Set-Content -Path $app -Value $xml -Encoding UTF8
+            Write-Output "Creado AppSettings.config (primer deploy)."
           }
 
       # Respaldo del sitio antes de tocar nada. Se guardan los ultimos 5 en una carpeta hermana

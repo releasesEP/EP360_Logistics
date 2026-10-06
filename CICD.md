@@ -38,7 +38,7 @@ No hay secretos en GitHub: la configuracion real vive en el servidor.
 
 ## Configuracion que NO se despliega
 
-`ConnectionStrings.config` y `AppSettings.config` estan fuera de git y viven solo en `RUTA_SITIO_IIS`; el Robocopy los excluye (`/XF`), igual que `App_Data` (`/XD`). El CD falla con un mensaje claro si no existen en el servidor. Crearlos una vez desde los `.example`:
+`ConnectionStrings.config` y `AppSettings.config` estan fuera de git y viven solo en `RUTA_SITIO_IIS`; el Robocopy los excluye (`/XF`), igual que `App_Data` (`/XD`). Si no existen (primer deploy), el CD los crea con estos valores y, si ya existen, no los toca. Para cambiarlos se editan a mano en el servidor:
 
 - `ConnectionStrings.config`: `Data Source=192.168.50.60,5003;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True` (identidad del pool).
 - `AppSettings.config`: `AD_GrupoAdmins=ep360admins`; correo con las llaves `EmailSmtp*`.
