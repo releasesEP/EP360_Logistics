@@ -5,7 +5,7 @@
        providerName="System.Data.SqlClient" />
 
   <!-- OPCIONAL: copia de la global en el servidor 11. Si esta, la app escribe en el 60 y repite en el 11 (ver Database/10_ReplicacionAl11.sql).
-       Sin esta linea escribe solo en el 60. En produccion tambien puede ir en la variable de entorno de MAQUINA DB_CONNECTION_STRING_REPLICA. -->
+       Sin esta linea escribe solo en el 60. En produccion tambien puede ir en la variable de entorno de MAQUINA EP360LOGISTICS_CONNECTION_STRING_REPLICA. -->
   <!--
   <add name="CadenaSQLReplica"
        connectionString="Data Source=192.168.50.11;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True"

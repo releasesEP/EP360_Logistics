@@ -18,7 +18,7 @@
 @{
     var controlador = (string)ViewContext.RouteData.Values["controller"];
     var accion = (string)ViewContext.RouteData.Values["action"];
-    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos" };
+    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos", "Sucursales" };
     var areaFlota = new[] { "Cajas", "Transportistas", "Tractores", "Choferes" };
     Func<string, string> activo = c => controlador == c ? "activo" : "";
     string area = areaDirectorio.Contains(controlador) ? "Directorio" : areaFlota.Contains(controlador) ? "Flota" : (controlador == "Sincronizacion" || controlador == "Replicacion") ? "Sistema" : null;
@@ -55,6 +55,7 @@
                 <a class="dropdown-item" href="@Url.Action("Crear", "Personas")"><i class="fas fa-user-plus"></i> Persona</a>
                 <a class="dropdown-item" href="@Url.Action("Crear", "Cuentas")"><i class="fas fa-building"></i> Cuenta</a>
                 <a class="dropdown-item" href="@Url.Action("Crear", "Grupos")"><i class="fas fa-layer-group"></i> Grupo de cuentas</a>
+                <a class="dropdown-item" href="@Url.Action("Crear", "Sucursales")"><i class="fas fa-location-dot"></i> Sucursal</a>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-header">Flota</div>
                 <a class="dropdown-item" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-trailer"></i> Caja</a>
@@ -106,6 +107,12 @@
                 <a class="menu-enlace @activo("Accesos")" style="--i:3" href="@Url.Action("Index", "Accesos")">
                     <span class="menu-enlace-icono"><i class="fas fa-key"></i></span>
                     <span class="menu-enlace-texto"><strong>Accesos a portales</strong><small>Quién entra a EP360, Balance, Help Desk...</small></span>
+                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
+                </a>
+
+                <a class="menu-enlace @activo("Sucursales")" style="--i:3" href="@Url.Action("Index", "Sucursales")">
+                    <span class="menu-enlace-icono"><i class="fas fa-location-dot"></i></span>
+                    <span class="menu-enlace-texto"><strong>Sucursales</strong><small>Catálogo compartido por los portales</small></span>
                     <i class="fas fa-chevron-right menu-enlace-flecha"></i>
                 </a>
 

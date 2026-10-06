@@ -1,0 +1,117 @@
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.SucursalAdminModel>
+@{
+    ViewBag.Title = "Sucursales";
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-location-dot"></i>Sucursales</h3>
+            <p>Catálogo compartido por todos los portales. Se llena solo con la oficina que trae cada usuario de AD; aquí puedes agregar, renombrar o desactivar.</p>
+        </div>
+    </div>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nueva sucursal</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-location-dot"></i></div><div class="kpi-tile-etiqueta">Sucursales activas</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivas).ToString("N0"))</div></div></div>
+    <div class="col-6 col-lg-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-users"></i></div><div class="kpi-tile-etiqueta">Personas asignadas</div><div class="kpi-tile-valor">@(((int)ViewBag.PersonasAsignadas).ToString("N0"))</div><span class="kpi-tile-detalle">En sucursales activas</span></div></div>
+    <div class="col-6 col-lg-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-circle-question"></i></div><div class="kpi-tile-etiqueta">Sin uso</div><div class="kpi-tile-valor">@(((int)ViewBag.SinUso).ToString("N0"))</div><span class="kpi-tile-detalle">Activas sin personas ni cuentas</span></div></div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar sucursal por nombre..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-location-dot"></i></div>
+            <h6>No hay sucursales con esos filtros</h6>
+            <p>Prueba con otra búsqueda o crea una sucursal nueva.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Sucursal", "nombre")
+                        @Html.ColumnaOrden("Personas", "personas", "num")
+                        @Html.ColumnaOrden("Cuentas", "cuentas", "num")
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Items)
+                    {
+                        <tr class="@(s.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep cuadrado @(s.Activo ? "" : "av-gris")"><i class="fas fa-location-dot"></i></span>
+                                    <div style="min-width:0;"><span class="nombre">@s.Nombre</span></div>
+                                </div>
+                            </td>
+                            <td class="num">@s.Personas.ToString("N0")</td>
+                            <td class="num">@s.Cuentas.ToString("N0")</td>
+                            <td>
+                                @if (s.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = s.IdSucursal })"><i class="fas fa-pen"></i> Renombrar</a>
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(s.Activo ? "Desactivar" : "Reactivar", "Sucursales", new { id = s.IdSucursal }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = s.Activo ? "¿Desactivar la sucursal " + s.Nombre + "?" : "¿Reactivar la sucursal " + s.Nombre + "?",
+                                            data_confirmar_detalle = s.Activo ? "Deja de ofrecerse como opción en todos los portales. Las " + s.Personas + " personas que ya la tienen la conservan." : "Vuelve a ofrecerse como opción.",
+                                            data_confirmar_tipo = s.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = s.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(s.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(s.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(s.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)

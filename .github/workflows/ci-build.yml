@@ -1,0 +1,43 @@
+name: CI - Verificar build
+
+# Corre en cada push a dev y en cada Pull Request hacia prod: asi un error de compilacion (C# o
+# vistas Razor) se detecta antes de mezclar, no despues de desplegar. Mismo esquema que el CI de EP360.
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ prod ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # ConnectionStrings.config / AppSettings.config nunca estan en el repo (ver .gitignore) y
+      # Web.config los referencia con configSource: sin ellos el build truena. Aqui se usan los .example
+      # (con relleno) solo para compilar; esto NO conecta a ninguna base de datos real.
+      - name: Crear configs con relleno (solo para compilar)
+        shell: pwsh
+        run: |
+          $ruta = "EP360_Logistics_Admin"
+          Copy-Item "$ruta/ConnectionStrings.config.example" "$ruta/ConnectionStrings.config"
+          Copy-Item "$ruta/AppSettings.config.example" "$ruta/AppSettings.config"
+
+      # El proyecto usa PackageReference: /restore baja los paquetes antes de compilar.
+      - name: Compilar (Release)
+        run: msbuild EP360_Logistics_Admin/EP360_Logistics_Admin.csproj /restore /p:Configuration=Release /nologo /v:minimal
+
+      # El .csproj no compila las vistas Razor al construir (solo se compilan al abrirlas), asi que un error
+      # en una vista pasaria el build y fallaria en produccion. aspnet_compiler las compila todas aqui.
+      - name: Validar vistas Razor
+        shell: pwsh
+        run: |
+          $compilador = Join-Path $env:windir "Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe"
+          & $compilador -v / -p (Resolve-Path "EP360_Logistics_Admin").Path -f (Join-Path $env:RUNNER_TEMP "vistas-compiladas")
+          if ($LASTEXITCODE -ne 0) { throw "Hay vistas Razor con errores (aspnet_compiler devolvio $LASTEXITCODE)." }

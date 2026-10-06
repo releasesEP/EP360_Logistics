@@ -1,0 +1,166 @@
+name: CD - Desplegar a IIS (prod)
+
+# Corre con push a la rama prod (cuando se mezcla dev -> prod). No toca dev. Mismo esquema que el CD de EP360:
+# "compilar" corre en la nube de GitHub (ya trae MSBuild); "desplegar" corre en el self-hosted runner instalado
+# en el servidor de IIS y SOLO copia lo ya compilado, asi el servidor no necesita MSBuild ni NuGet.
+#
+# SECRETOS Y VARIABLES que deben existir en este repositorio (Settings > Secrets and variables > Actions):
+#   Secrets:    EP360LOGISTICS_CONNECTION_STRING          cadena de la global en el 60 (obligatoria)
+#               EP360LOGISTICS_CONNECTION_STRING_REPLICA  cadena de la copia en el 11 (puede ir vacia: entonces escribe solo en el 60)
+#   Variables:  RUTA_SITIO_IIS                            carpeta fisica del sitio, ej. C:\inetpub\Aplicaciones\ep360\EP360_Logistics_Admin
+#               NOMBRE_APP_POOL                           nombre del Application Pool del sitio
+# Los nombres de las variables de MAQUINA son propios (EP360LOGISTICS_*) a proposito: el portal EP360 vive en el mismo servidor y ya usa
+# DB_CONNECTION_STRING para SU base.
+on:
+  push:
+    branches: [ prod ]
+
+jobs:
+  compilar:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      # Solo para que existan los archivos (Web.config los referencia con configSource). En produccion los valores reales
+      # llegan por variables de entorno de la maquina (ver el job "desplegar").
+      - name: Crear configs con relleno (solo para que exista el archivo)
+        shell: powershell
+        run: |
+          $ruta = "EP360_Logistics_Admin"
+          Copy-Item "$ruta\ConnectionStrings.config.example" "$ruta\ConnectionStrings.config"
+          Copy-Item "$ruta\AppSettings.config.example" "$ruta\AppSettings.config"
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar (Release)
+        run: msbuild EP360_Logistics_Admin/EP360_Logistics_Admin.csproj /restore /p:Configuration=Release /nologo /v:minimal
+
+      - name: Validar vistas Razor
+        shell: powershell
+        run: |
+          $compilador = Join-Path $env:windir "Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe"
+          & $compilador -v / -p (Resolve-Path "EP360_Logistics_Admin").Path -f (Join-Path $env:RUNNER_TEMP "vistas-compiladas")
+          if ($LASTEXITCODE -ne 0) { throw "Hay vistas Razor con errores (aspnet_compiler devolvio $LASTEXITCODE)." }
+
+      # Carpeta limpia con solo lo que debe vivir en el servidor (sin .cs/.csproj/obj, ya compilado).
+      - name: Preparar carpeta de publicacion
+        shell: cmd
+        run: |
+          robocopy "EP360_Logistics_Admin" "publicar" /MIR /XD ".git" ".github" ".vs" "obj" /XF "*.cs" "*.csproj" "*.csproj.user" "*.example" "packages.config" "errores.log"
+          if %ERRORLEVEL% GEQ 8 (exit /b 1) else (exit /b 0)
+
+      # El Web.config del repo tiene debug="true" (comodo en local). Un build normal no aplica Web.Release.config, asi que
+      # sin este paso produccion correria en modo debug. Se parchea solo la copia que se despliega.
+      - name: Apagar modo debug en la copia que se despliega
+        shell: powershell
+        run: |
+          $ruta = Resolve-Path "publicar\Web.config"
+          $xml = New-Object System.Xml.XmlDocument
+          $xml.Load($ruta)
+          $nodoCompilation = $xml.SelectSingleNode("//system.web/compilation")
+          $nodoCompilation.SetAttribute("debug", "false")
+          $xml.Save($ruta)
+          Write-Output "debug quedo en: $($nodoCompilation.GetAttribute('debug'))"
+
+      - name: Subir resultado compilado como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitio-publicado
+          path: publicar
+          retention-days: 1
+
+  desplegar:
+    needs: compilar
+    runs-on: self-hosted
+    # actions: write: lo necesita el ultimo paso para borrar el artefacto ya usado (cuota de Actions storage compartida).
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      # Variables de entorno de la MAQUINA: la app las lee en vivo del registro (EnvironmentVariableTarget.Machine), asi que un
+      # secreto rotado aqui queda disponible sin reiniciar IIS. Ojo: nada de acentos ni guiones largos dentro de estos bloques de
+      # PowerShell (en el runner el script temporal se corrompe con esos caracteres, igual que en el CD de EP360).
+      - name: Configurar variables de entorno con los secretos reales
+        shell: powershell
+        run: |
+          $principal = "${{ secrets.EP360LOGISTICS_CONNECTION_STRING }}"
+          if ([string]::IsNullOrWhiteSpace($principal)) {
+            throw "Falta el secreto EP360LOGISTICS_CONNECTION_STRING en el repositorio: sin el la app no sabe a que base conectarse."
+          }
+          [Environment]::SetEnvironmentVariable("EP360LOGISTICS_CONNECTION_STRING", $principal, "Machine")
+
+          # Vacio = sin copia en el 11 (la app escribe solo en el 60). Poner una cadena activa la replicacion.
+          $replica = "${{ secrets.EP360LOGISTICS_CONNECTION_STRING_REPLICA }}"
+          if ([string]::IsNullOrWhiteSpace($replica)) { $replica = $null }
+          [Environment]::SetEnvironmentVariable("EP360LOGISTICS_CONNECTION_STRING_REPLICA", $replica, "Machine")
+          Write-Output "Replicacion al 11: $(if ($replica) { 'ACTIVA' } else { 'apagada (escribe solo en el 60)' })"
+
+      # app_offline.htm es nativo de ASP.NET: mientras exista en la raiz, toda peticion recibe esta pagina. No hace falta
+      # detener el Application Pool; el Robocopy de abajo lo borra solo (no viene en el artefacto) y la app vuelve a servir.
+      - name: Activar pagina de mantenimiento
+        shell: powershell
+        run: |
+          $html = @"
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+          <meta charset="utf-8" />
+          <title>EP360 Logistics</title>
+          <style>
+            body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+                   background:#0B1B3D; color:#DCE4F5; font-family:"Segoe UI",system-ui,sans-serif; }
+            .marca { font-size:32px; font-weight:800; letter-spacing:-.02em; text-align:center; }
+            .marca span { color:#4AA3E8; }
+            p { color:rgba(220,228,245,.75); font-size:15px; text-align:center; }
+          </style>
+          </head>
+          <body>
+            <div>
+              <div class="marca">EP<span>360</span> Logistics</div>
+              <p>Estamos actualizando el sistema. Volvemos en un momento.</p>
+            </div>
+          </body>
+          </html>
+          "@
+          Set-Content -Path "${{ vars.RUTA_SITIO_IIS }}\app_offline.htm" -Value $html -Encoding UTF8
+          Start-Sleep -Seconds 3
+
+      - name: Descargar el resultado compilado
+        uses: actions/download-artifact@v4
+        with:
+          name: sitio-publicado
+          path: descargado
+
+      # /MIR deja destino = origen. errores.log se excluye para no borrar el registro de errores del servidor.
+      - name: Copiar archivos al sitio (Robocopy)
+        shell: cmd
+        run: |
+          robocopy "descargado" "${{ vars.RUTA_SITIO_IIS }}" /MIR /XF "errores.log" /R:3 /W:5
+          if %ERRORLEVEL% GEQ 8 (exit /b 1) else (exit /b 0)
+
+      - name: Confirmar que la pagina de mantenimiento ya se quito
+        shell: powershell
+        run: |
+          Start-Sleep -Seconds 3
+          if (Test-Path "${{ vars.RUTA_SITIO_IIS }}\app_offline.htm") {
+            throw "app_offline.htm sigue presente - el Robocopy no lo quito como se esperaba."
+          }
+          Import-Module WebAdministration
+          Write-Output "Estado del Application Pool: $((Get-WebAppPoolState -Name "${{ vars.NOMBRE_APP_POOL }}").Value)"
+
+      # Borra el artefacto en cuanto ya se uso, para no ocupar la cuota compartida de Actions storage. if: success() a proposito:
+      # si algo fallo antes, el artefacto se queda por si hace falta reintentar "desplegar" sin recompilar.
+      - name: Borrar el artefacto ya usado (libera cuota de Actions storage)
+        if: success()
+        shell: powershell
+        run: |
+          $headers = @{ Authorization = "Bearer ${{ secrets.GITHUB_TOKEN }}"; Accept = "application/vnd.github+json" }
+          $artefactos = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"
+          foreach ($artefacto in $artefactos.artifacts) {
+            Invoke-RestMethod -Headers $headers -Method Delete -Uri $artefacto.url
+            Write-Output "Artefacto borrado: $($artefacto.name) ($($artefacto.size_in_bytes) bytes)"
+          }

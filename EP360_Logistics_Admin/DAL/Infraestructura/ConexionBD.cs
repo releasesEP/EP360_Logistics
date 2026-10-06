@@ -7,11 +7,12 @@ namespace EP360_Logistics_Admin.DAL.Infraestructura
     public static class ConexionBD
     {
         // En produccion la cadena puede venir de la variable de entorno de MAQUINA
-        // DB_CONNECTION_STRING (asi no queda en texto plano en un archivo). En desarrollo
+        // EP360LOGISTICS_CONNECTION_STRING (asi no queda en texto plano en un archivo). El nombre es PROPIO a proposito: esta app vive en el
+        // mismo servidor que el portal EP360, que ya usa DB_CONNECTION_STRING para SU base; compartir el nombre haria que una leyera la de la otra. En desarrollo
         // esa variable no existe y se usa ConnectionStrings.config.
         public static SqlConnection ObtenerConexion()
         {
-            string cadenaConexion = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING", EnvironmentVariableTarget.Machine);
+            string cadenaConexion = Environment.GetEnvironmentVariable("EP360LOGISTICS_CONNECTION_STRING", EnvironmentVariableTarget.Machine);
             if (string.IsNullOrWhiteSpace(cadenaConexion))
             {
                 cadenaConexion = ConfigurationManager.ConnectionStrings["CadenaSQL"].ConnectionString;
@@ -19,11 +20,11 @@ namespace EP360_Logistics_Admin.DAL.Infraestructura
             return new SqlConnection(cadenaConexion);
         }
 
-        // Copia de la global en el servidor 11 (DB_CONNECTION_STRING_REPLICA de maquina, o "CadenaSQLReplica" en
+        // Copia de la global en el servidor 11 (EP360LOGISTICS_CONNECTION_STRING_REPLICA de maquina, o "CadenaSQLReplica" en
         // ConnectionStrings.config). Si no esta configurada, la app escribe solo en el 60 como antes.
         private static string CadenaReplica()
         {
-            string cadena = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING_REPLICA", EnvironmentVariableTarget.Machine);
+            string cadena = Environment.GetEnvironmentVariable("EP360LOGISTICS_CONNECTION_STRING_REPLICA", EnvironmentVariableTarget.Machine);
             if (string.IsNullOrWhiteSpace(cadena))
             {
                 var configurada = ConfigurationManager.ConnectionStrings["CadenaSQLReplica"];

@@ -1,0 +1,37 @@
+@model EP360_Logistics_Admin.Models.SucursalAdminModel
+@{
+    bool esNueva = Model.IdSucursal == 0;
+    ViewBag.Title = esNueva ? "Nueva sucursal" : "Renombrar sucursal";
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-location-dot"></i>@ViewBag.Title</h3>
+            <p>@(esNueva ? "Estará disponible en todos los portales." : "El cambio se refleja en todos los portales y en las personas que ya la tienen.")</p>
+        </div>
+    </div>
+</div>
+
+<div class="form-ep" style="max-width:640px;">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdSucursal)
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Nombre de la sucursal</div>
+                @Html.LabelFor(m => m.Nombre)
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. Miguel de la Madrid" })
+                @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+                <span class="ayuda-campo">No se puede repetir, ni siquiera con otras mayúsculas o acentos. Debe coincidir con la oficina que trae AD para que los usuarios se asignen solos.</span>
+            </div>
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@Url.Action("Index")">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    }
+</div>
