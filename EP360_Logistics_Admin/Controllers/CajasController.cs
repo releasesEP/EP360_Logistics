@@ -103,7 +103,7 @@ namespace EP360_Logistics_Admin.Controllers
             if (!ModelState.IsValid) return Formulario(modelo);
             int id;
             return EjecutarConId(() => _servicio.Crear(modelo), "Caja creada.", out id)
-                ? (ActionResult)RedirectToAction("Detalle", new { id })
+                ? ExitoFormulario(Url.Action("Detalle", new { id }))
                 : Formulario(modelo);
         }
 
@@ -119,7 +119,7 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (!ModelState.IsValid) return Formulario(modelo);
             return Ejecutar(() => _servicio.Actualizar(modelo), "Caja actualizada.")
-                ? (ActionResult)RedirectToAction("Detalle", new { id = modelo.IdCaja })
+                ? ExitoFormulario(Url.Action("Detalle", new { id = modelo.IdCaja }))
                 : Formulario(modelo);
         }
 
@@ -142,7 +142,7 @@ namespace EP360_Logistics_Admin.Controllers
             ViewBag.Grupos = _catalogos.Grupos(modelo.IdGrupoCuenta);
             ViewBag.Cuentas = _catalogos.Cuentas(modelo.IdCuenta);
             ViewBag.Transportistas = _catalogos.Transportistas(modelo.IdTransportista);
-            return View("Form", modelo);
+            return VistaFormulario("Form", "_Modal", modelo);
         }
     }
 }

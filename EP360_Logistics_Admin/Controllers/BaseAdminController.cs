@@ -39,6 +39,23 @@ namespace EP360_Logistics_Admin.Controllers
             return ok;
         }
 
+        // Formularios cortos: si la peticion viene del modal (fetch con X-Requested-With) se devuelve solo el
+        // contenido del modal; si alguien abre la URL directo, la pagina completa de siempre.
+        protected ActionResult VistaFormulario(string vista, string vistaModal, object modelo)
+        {
+            if (!Request.IsAjaxRequest()) return View(vista, modelo);
+            // El error de la BD se muestra dentro del modal, no en el aviso de la siguiente pagina.
+            if (TempData["Error"] != null) { ViewBag.ErrorModal = TempData["Error"]; TempData.Remove("Error"); }
+            return PartialView(vistaModal, modelo);
+        }
+
+        // Guardado correcto: el modal recibe a donde ir (el aviso de exito queda en TempData para esa pagina).
+        protected ActionResult ExitoFormulario(string url)
+        {
+            if (Request.IsAjaxRequest()) return Json(new { ok = true, url });
+            return Redirect(url);
+        }
+
         // Despues de una accion desde un listado, regresa a la misma pagina con los mismos filtros.
         // Solo se aceptan URLs locales (evita redirecciones abiertas).
         protected ActionResult Volver(string returnUrl, ActionResult porOmision)

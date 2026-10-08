@@ -106,7 +106,7 @@ namespace EP360_Logistics_Admin.Controllers
             if (!ModelState.IsValid) return Formulario(modelo);
             int id;
             return EjecutarConId(() => _servicio.Crear(modelo), "Transportista creado.", out id)
-                ? (ActionResult)RedirectToAction("Detalle", new { id })
+                ? ExitoFormulario(Url.Action("Detalle", new { id }))
                 : Formulario(modelo);
         }
 
@@ -122,7 +122,7 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (!ModelState.IsValid) return Formulario(modelo);
             return Ejecutar(() => _servicio.Actualizar(modelo), "Transportista actualizado.")
-                ? (ActionResult)RedirectToAction("Detalle", new { id = modelo.IdTransportista })
+                ? ExitoFormulario(Url.Action("Detalle", new { id = modelo.IdTransportista }))
                 : Formulario(modelo);
         }
 
@@ -158,7 +158,7 @@ namespace EP360_Logistics_Admin.Controllers
         private ActionResult Formulario(TransportistaModel modelo)
         {
             ViewBag.Cuentas = _catalogos.Cuentas(modelo.IdCuenta);
-            return View("Form", modelo);
+            return VistaFormulario("Form", "_Modal", modelo);
         }
     }
 }

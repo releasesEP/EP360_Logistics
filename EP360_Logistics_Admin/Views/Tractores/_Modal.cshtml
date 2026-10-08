@@ -1,0 +1,56 @@
+@model EP360_Logistics_Admin.Models.TractorModel
+@{ bool esNuevo = Model.IdTractor == 0; }
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNuevo ? "Crear" : "Editar", "Tractores", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdTractor)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas fa-truck"></i></span>
+                <span>@(esNuevo ? "Nuevo tractor" : "Editar tractor")<small>@(esNuevo ? "El económico se guarda en mayúsculas, sin espacios ni guiones." : Model.Transportista + " · " + Model.Economico)</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+            <div class="row g-3">
+                <div class="col-md-7">
+                    @Html.LabelFor(m => m.IdTransportista)
+                    @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "Elige un transportista…", new { @class = "form-select" })
+                    @Html.ValidationMessageFor(m => m.IdTransportista, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-5">
+                    @Html.LabelFor(m => m.Economico)
+                    @Html.TextBoxFor(m => m.Economico, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. WH120" })
+                    @Html.ValidationMessageFor(m => m.Economico, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-5">
+                    @Html.LabelFor(m => m.Placa)
+                    @Html.TextBoxFor(m => m.Placa, new { @class = "form-control" })
+                </div>
+                <div class="col-md-7">
+                    @Html.LabelFor(m => m.Vin)
+                    @Html.TextBoxFor(m => m.Vin, new { @class = "form-control", maxlength = "20" })
+                </div>
+                <div class="col-md-5">
+                    @Html.LabelFor(m => m.Anio)
+                    @Html.TextBoxFor(m => m.Anio, new { @class = "form-control", type = "number", min = "1950", max = "2100" })
+                    @Html.ValidationMessageFor(m => m.Anio, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-7">
+                    @Html.LabelFor(m => m.Marca)
+                    @Html.TextBoxFor(m => m.Marca, new { @class = "form-control" })
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNuevo ? "Crear tractor" : "Guardar")</button>
+        </div>
+    }
+</div>

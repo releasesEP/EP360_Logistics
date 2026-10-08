@@ -69,7 +69,7 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (!ModelState.IsValid) return Formulario(modelo);
             return Ejecutar(() => _servicio.Crear(modelo), "Tractor creado.")
-                ? (ActionResult)Redirect(Url.Action("Detalle", "Transportistas", new { id = modelo.IdTransportista }) + "#pestana-tractores")
+                ? ExitoFormulario(Url.Action("Detalle", "Transportistas", new { id = modelo.IdTransportista }) + "#pestana-tractores")
                 : Formulario(modelo);
         }
 
@@ -85,7 +85,7 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (!ModelState.IsValid) return Formulario(modelo);
             return Ejecutar(() => _servicio.Actualizar(modelo), "Tractor actualizado.")
-                ? (ActionResult)Redirect(Url.Action("Detalle", "Transportistas", new { id = modelo.IdTransportista }) + "#pestana-tractores")
+                ? ExitoFormulario(Url.Action("Detalle", "Transportistas", new { id = modelo.IdTransportista }) + "#pestana-tractores")
                 : Formulario(modelo);
         }
 
@@ -114,7 +114,7 @@ namespace EP360_Logistics_Admin.Controllers
         private ActionResult Formulario(TractorModel modelo)
         {
             ViewBag.Transportistas = _catalogos.Transportistas(modelo.IdTransportista);
-            return View("Form", modelo);
+            return VistaFormulario("Form", "_Modal", modelo);
         }
     }
 }

@@ -1,4 +1,4 @@
-@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.SincronizacionADModel>
+﻿@model System.Collections.Generic.List<EP360_Logistics_Admin.Models.SincronizacionADModel>
 @{
     ViewBag.Title = "Sincronización con AD";
     var ultima = Model.FirstOrDefault();
@@ -84,7 +84,7 @@
                                     <td class="num">@s.Altas</td>
                                     <td class="num">@s.Actualizaciones</td>
                                     <td class="num">@s.Omitidos</td>
-                                    <td class="num @(s.Errores > 0 ? "text-danger fw-bold" : "")">@s.Errores</td>
+                                    <td class="num @(s.Errores > 0 ? "colorprincipal fw-bold" : "")">@s.Errores</td>
                                 </tr>
                                 if (!string.IsNullOrEmpty(s.DetalleErrores))
                                 {

@@ -1,27 +1,25 @@
-@model EP360_Logistics_Admin.Models.InicioModel
+﻿@model EP360_Logistics_Admin.Models.InicioModel
 @{
     ViewBag.Title = "Inicio";
     var e = Model.Estado;
     var sync = Model.UltimaSincronizacion;
     string saludo = DateTime.Now.Hour < 12 ? "Buenos días" : DateTime.Now.Hour < 19 ? "Buenas tardes" : "Buenas noches";
-    string usuario = User.Identity.Name ?? "";
-    usuario = usuario.Contains("\\") ? usuario.Substring(usuario.IndexOf('\\') + 1) : usuario;
 }
 
 <section class="hero-ep">
     <i class="fas fa-globe-americas hero-decoracion" aria-hidden="true"></i>
-    <h2>@saludo, @usuario</h2>
+    <h2>@saludo</h2>
     <p>Directorio global y flota compartidos por los portales de EP Logistics: personas, clientes, cajas, transportistas, tractores y choferes en un solo lugar.</p>
     <div class="hero-meta">
         @if (e.Conectado)
         {
-            <span><i class="fas fa-circle" style="color:#4ade80;font-size:.55rem;"></i> Base en línea · @e.BaseDatos</span>
+            <span><i class="fas fa-circle" style="color:#4aa3e8;font-size:.55rem;"></i> Base en línea · @e.BaseDatos</span>
             <span><i class="fas fa-server"></i> @e.Servidor</span>
             <span><i class="fas fa-plug"></i> @e.PortalesActivos portales conectados</span>
         }
         else
         {
-            <span><i class="fas fa-circle" style="color:#f87171;font-size:.55rem;"></i> Sin conexión con la base</span>
+            <span><i class="fas fa-circle" style="color:rgba(255,255,255,.45);font-size:.55rem;"></i> Sin conexión con la base</span>
         }
         @if (sync != null)
         {
@@ -51,10 +49,10 @@ else
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-users"></i></div><div class="kpi-tile-etiqueta">Personas</div><div class="kpi-tile-valor">@Model.PersonasActivas.ToString("N0")</div><span class="kpi-tile-detalle">activas</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "AD" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fab fa-windows"></i></div><div class="kpi-tile-etiqueta">Usuarios AD</div><div class="kpi-tile-valor">@Model.UsuariosAD.ToString("N0")</div><span class="kpi-tile-detalle">del dominio</span></a></div>
-        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Externos</div><div class="kpi-tile-valor">@Model.UsuariosExternos.ToString("N0")</div><span class="kpi-tile-detalle">con contraseña propia</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Externos</div><div class="kpi-tile-valor">@Model.UsuariosExternos.ToString("N0")</div><span class="kpi-tile-detalle">con contraseña propia</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Personas", new { tipo = "Contacto" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-address-card"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@Model.Contactos.ToString("N0")</div><span class="kpi-tile-detalle">de clientes</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cuentas")"><div class="kpi-tile-icono" style="--kpi-color:#0f4c9e;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">Cuentas</div><div class="kpi-tile-valor">@Model.CuentasActivas.ToString("N0")</div><span class="kpi-tile-detalle">@Model.CuentasSinGrupo.ToString("N0") sin grupo</span></a></div>
-        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Grupos")"><div class="kpi-tile-icono" style="--kpi-color:#0891b2;"><i class="fas fa-layer-group"></i></div><div class="kpi-tile-etiqueta">Grupos</div><div class="kpi-tile-valor">@Model.GruposActivos.ToString("N0")</div><span class="kpi-tile-detalle">de cuentas</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Grupos")"><div class="kpi-tile-icono" style="--kpi-color:#0f4c9e;"><i class="fas fa-layer-group"></i></div><div class="kpi-tile-etiqueta">Grupos</div><div class="kpi-tile-valor">@Model.GruposActivos.ToString("N0")</div><span class="kpi-tile-detalle">de cuentas</span></a></div>
     </div>
 
     <h6 class="seccion-titulo">Flota</h6>
@@ -62,9 +60,9 @@ else
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cajas")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@Model.CajasActivas.ToString("N0")</div><span class="kpi-tile-detalle">activas</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Cajas", new { tipoPropiedad = "Cliente" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">De cliente</div><div class="kpi-tile-valor">@Model.CajasCliente.ToString("N0")</div><span class="kpi-tile-detalle">@Model.CajasTransportista.ToString("N0") de transportista · @Model.CajasEP.ToString("N0") EP</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Transportistas")"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@Model.TransportistasActivos.ToString("N0")</div><span class="kpi-tile-detalle">líneas activas</span></a></div>
-        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Tractores")"><div class="kpi-tile-icono" style="--kpi-color:#475569;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores</div><div class="kpi-tile-valor">@Model.TractoresActivos.ToString("N0")</div><span class="kpi-tile-detalle">activos</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Tractores")"><div class="kpi-tile-icono" style="--kpi-color:#64748b;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores</div><div class="kpi-tile-valor">@Model.TractoresActivos.ToString("N0")</div><span class="kpi-tile-detalle">activos</span></a></div>
         <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Choferes")"><div class="kpi-tile-icono" style="--kpi-color:#16a34a;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes</div><div class="kpi-tile-valor">@Model.ChoferesActivos.ToString("N0")</div><span class="kpi-tile-detalle">activos</span></a></div>
-        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Choferes")"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Multilínea</div><div class="kpi-tile-valor">@Model.ChoferesVariosTransportistas.ToString("N0")</div><span class="kpi-tile-detalle">choferes con 2+ transportistas</span></a></div>
+        <div class="col-6 col-md-4 col-xl-2"><a class="kpi-tile" href="@Url.Action("Index", "Choferes")"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Multilínea</div><div class="kpi-tile-valor">@Model.ChoferesVariosTransportistas.ToString("N0")</div><span class="kpi-tile-detalle">choferes con 2+ transportistas</span></a></div>
     </div>
 
     <div class="row g-3 mb-2">
@@ -96,9 +94,9 @@ else
 
     <h6 class="seccion-titulo mt-4">Accesos rápidos</h6>
     <div class="row g-3 mb-4">
-        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Personas")"><span class="acceso-icono"><i class="fas fa-user-plus"></i></span><span><strong>Dar de alta una persona</strong><small>Contacto o usuario externo</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
-        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Cajas")"><span class="acceso-icono"><i class="fas fa-trailer"></i></span><span><strong>Registrar una caja</strong><small>De cliente, transportista o EP</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
-        <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Crear", "Choferes")"><span class="acceso-icono"><i class="fas fa-id-card"></i></span><span><strong>Dar de alta un chofer</strong><small>Y ligarlo a sus transportistas</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a data-modal="lg" class="acceso-ep" href="@Url.Action("Crear", "Personas")"><span class="acceso-icono"><i class="fas fa-user-plus"></i></span><span><strong>Dar de alta una persona</strong><small>Contacto o usuario externo</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a data-modal="lg" class="acceso-ep" href="@Url.Action("Crear", "Cajas")"><span class="acceso-icono"><i class="fas fa-trailer"></i></span><span><strong>Registrar una caja</strong><small>De cliente, transportista o EP</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
+        <div class="col-md-6 col-xl-3"><a data-modal class="acceso-ep" href="@Url.Action("Crear", "Choferes")"><span class="acceso-icono"><i class="fas fa-id-card"></i></span><span><strong>Dar de alta un chofer</strong><small>Y ligarlo a sus transportistas</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
         <div class="col-md-6 col-xl-3"><a class="acceso-ep" href="@Url.Action("Index", "Sincronizacion")"><span class="acceso-icono"><i class="fas fa-rotate"></i></span><span><strong>Sincronizar con AD</strong><small>@(sync != null ? "Última: " + sync.FechaInicio.ToString("dd/MM HH:mm") + " · " + sync.Estado : "Nunca se ha corrido")</small></span><i class="fas fa-chevron-right acceso-flecha"></i></a></div>
     </div>
 

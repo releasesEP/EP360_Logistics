@@ -1,0 +1,47 @@
+@model EP360_Logistics_Admin.Models.TransportistaModel
+@{ bool esNuevo = Model.IdTransportista == 0; }
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNuevo ? "Crear" : "Editar", "Transportistas", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdTransportista)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas fa-truck-fast"></i></span>
+                <span>@(esNuevo ? "Nuevo transportista" : "Editar transportista")<small>@(esNuevo ? "El folio se genera automáticamente." : Model.Nombre + " · Folio " + Model.Folio)</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+            <div class="row g-3">
+                <div class="col-md-7">
+                    @Html.LabelFor(m => m.Nombre)
+                    @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. WARHORSE" })
+                    @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-5">
+                    @Html.LabelFor(m => m.Rfc)
+                    @Html.TextBoxFor(m => m.Rfc, new { @class = "form-control" })
+                </div>
+                <div class="col-12">
+                    @Html.LabelFor(m => m.RazonSocial)
+                    @Html.TextBoxFor(m => m.RazonSocial, new { @class = "form-control" })
+                </div>
+                <div class="col-12">
+                    @Html.LabelFor(m => m.IdCuenta)
+                    @Html.DropDownListFor(m => m.IdCuenta, (IEnumerable<SelectListItem>)ViewBag.Cuentas, "(no es cuenta del directorio)", new { @class = "form-select" })
+                    <span class="ayuda-campo d-block mt-1">Solo si el transportista también es cliente de EP.</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNuevo ? "Crear transportista" : "Guardar")</button>
+        </div>
+    }
+</div>

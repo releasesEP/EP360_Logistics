@@ -1,4 +1,4 @@
-@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.ChoferModel>
+﻿@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.ChoferModel>
 @{
     ViewBag.Title = "Choferes";
     var enc = (EncabezadoListado)ViewBag.Encabezado;
@@ -15,14 +15,14 @@
         </div>
     </div>
     <div class="encabezado-acciones">
-        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo chofer</a>
+        <a data-modal class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo chofer</a>
     </div>
 </div>
 
 
 <div class="row g-3 mb-3">
     <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes activos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivos).ToString("N0"))</div></a></div>
-    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "varios" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Con 2+ transportistas</div><div class="kpi-tile-valor">@(((int)ViewBag.Varios).ToString("N0"))</div><span class="kpi-tile-detalle">Trabajan con varias líneas</span></a></div>
+    <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "varios" })"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-shuffle"></i></div><div class="kpi-tile-etiqueta">Con 2+ transportistas</div><div class="kpi-tile-valor">@(((int)ViewBag.Varios).ToString("N0"))</div><span class="kpi-tile-detalle">Trabajan con varias líneas</span></a></div>
     <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "sintransportista" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-link-slash"></i></div><div class="kpi-tile-etiqueta">Sin transportista activo</div><div class="kpi-tile-valor">@(((int)ViewBag.SinTransportista).ToString("N0"))</div><span class="kpi-tile-detalle">Solo tienen historial</span></a></div>
     <div class="col-6 col-lg-3"><a class="kpi-tile" href="@Url.Action("Index", new { situacion = "sinlicencia" })"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-id-badge"></i></div><div class="kpi-tile-etiqueta">Sin licencia</div><div class="kpi-tile-valor">@(((int)ViewBag.SinLicencia).ToString("N0"))</div><span class="kpi-tile-detalle">Activos sin licencia capturada</span></a></div>
 </div>
@@ -118,7 +118,7 @@ else
                                     <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
                                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
                                         <a class="dropdown-item" href="@Url.Action("Detalle", new { id = c.IdChofer })"><i class="fas fa-eye"></i> Ver ficha</a>
-                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = c.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
+                                        <a data-modal class="dropdown-item" href="@Url.Action("Editar", new { id = c.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
                                         <div class="dropdown-divider"></div>
                                         @using (Html.BeginForm(c.Activo ? "Desactivar" : "Reactivar", "Choferes", new { id = c.IdChofer }, FormMethod.Post, new
                                         {

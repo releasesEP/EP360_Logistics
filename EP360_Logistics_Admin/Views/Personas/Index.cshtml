@@ -1,4 +1,4 @@
-@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.PersonaModel>
+﻿@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.PersonaModel>
 @{
     ViewBag.Title = "Personas";
     var enc = (EncabezadoListado)ViewBag.Encabezado;
@@ -17,7 +17,7 @@
     </div>
     <div class="encabezado-acciones">
         <a class="btn-suave" href="@Url.Action("Index", "Sincronizacion")"><i class="fas fa-rotate"></i> Sincronizar AD</a>
-        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-user-plus"></i> Nueva persona</a>
+        <a data-modal="lg" class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-user-plus"></i> Nueva persona</a>
     </div>
 </div>
 
@@ -25,7 +25,7 @@
 <div class="row g-3 mb-3">
     <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index")"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-users"></i></div><div class="kpi-tile-etiqueta">Personas activas</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalActivas).ToString("N0"))</div></a></div>
     <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "AD" })"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fab fa-windows"></i></div><div class="kpi-tile-etiqueta">Usuarios de AD</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalAD).ToString("N0"))</div><span class="kpi-tile-detalle">Entran con su cuenta de Windows</span></a></div>
-    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Usuarios externos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalExternos).ToString("N0"))</div><span class="kpi-tile-detalle">Entran con correo y contraseña</span></a></div>
+    <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "Externo" })"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-key"></i></div><div class="kpi-tile-etiqueta">Usuarios externos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalExternos).ToString("N0"))</div><span class="kpi-tile-detalle">Entran con correo y contraseña</span></a></div>
     <div class="col-6 col-lg"><a class="kpi-tile" href="@Url.Action("Index", new { tipo = "Contacto" })"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-address-card"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@(((int)ViewBag.TotalContactos).ToString("N0"))</div><span class="kpi-tile-detalle">Sin acceso a los portales</span></a></div>
     <div class="col-6 col-lg"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-sitemap"></i></div><div class="kpi-tile-etiqueta">Sin departamento</div><div class="kpi-tile-valor">@(((int)ViewBag.SinDepartamento).ToString("N0"))</div><span class="kpi-tile-detalle">Activas sin departamento</span></div></div>
 </div>
@@ -130,7 +130,7 @@ else
                                     <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
                                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
                                         <a class="dropdown-item" href="@Url.Action("Detalle", new { id = p.IdPersona })"><i class="fas fa-eye"></i> Ver ficha</a>
-                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = p.IdPersona })"><i class="fas fa-pen"></i> Editar</a>
+                                        <a data-modal="lg" class="dropdown-item" href="@Url.Action("Editar", new { id = p.IdPersona })"><i class="fas fa-pen"></i> Editar</a>
                                         @if (!p.EsAD)
                                         {
                                             <div class="dropdown-divider"></div>

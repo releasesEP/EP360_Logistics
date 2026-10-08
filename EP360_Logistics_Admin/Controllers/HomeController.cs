@@ -11,5 +11,11 @@ namespace EP360_Logistics_Admin.Controllers
         {
             return View(_inicioService.Obtener());
         }
+
+        // Novedades del sistema (versionamiento), como la pagina de HelpDesk. Se abre desde la version del pie.
+        public ActionResult Novedades()
+        {
+            return View();
+        }
     }
 }

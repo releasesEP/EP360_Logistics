@@ -53,7 +53,7 @@
         </div>
     </div>
     <div class="perfil-acciones">
-        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdPersona })"><i class="fas fa-pen"></i> Editar</a>
+        <a data-modal="lg" class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdPersona })"><i class="fas fa-pen"></i> Editar</a>
         @if (!Model.EsAD)
         {
             using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Personas", new { id = Model.IdPersona }, FormMethod.Post, new

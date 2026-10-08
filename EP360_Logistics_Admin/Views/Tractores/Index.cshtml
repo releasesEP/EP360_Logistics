@@ -14,7 +14,7 @@
         </div>
     </div>
     <div class="encabezado-acciones">
-        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo tractor</a>
+        <a data-modal class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nuevo tractor</a>
     </div>
 </div>
 
@@ -74,7 +74,7 @@ else
                             <td>
                                 <div class="celda-principal">
                                     <span class="avatar-ep cuadrado @(t.Activo ? "" : "av-gris")"><i class="fas fa-truck"></i></span>
-                                    <a class="nombre" href="@Url.Action("Editar", new { id = t.IdTractor })">@t.Economico</a>
+                                    <a data-modal class="nombre" href="@Url.Action("Editar", new { id = t.IdTractor })">@t.Economico</a>
                                 </div>
                             </td>
                             <td><a href="@Url.Action("Detalle", "Transportistas", new { id = t.IdTransportista })" class="fw-semibold">@t.Transportista</a></td>
@@ -95,7 +95,7 @@ else
                                 <div class="dropdown">
                                     <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
                                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
-                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = t.IdTractor })"><i class="fas fa-pen"></i> Editar</a>
+                                        <a data-modal class="dropdown-item" href="@Url.Action("Editar", new { id = t.IdTractor })"><i class="fas fa-pen"></i> Editar</a>
                                         <a class="dropdown-item" href="@Url.Action("Detalle", "Transportistas", new { id = t.IdTransportista })"><i class="fas fa-truck-fast"></i> Ver transportista</a>
                                         <div class="dropdown-divider"></div>
                                         @using (Html.BeginForm(t.Activo ? "Desactivar" : "Reactivar", "Tractores", new { id = t.IdTractor }, FormMethod.Post, new
