@@ -1,4 +1,4 @@
-@model EP360_Logistics_Admin.Models.GrupoCuentaModel
+﻿@model EP360_Logistics_Admin.Models.GrupoCuentaModel
 @{
     ViewBag.Title = Model.Nombre;
     var cuentas = (List<CuentaModel>)ViewBag.Cuentas;
@@ -40,7 +40,7 @@
         </div>
     </div>
     <div class="perfil-acciones">
-        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdGrupoCuenta })"><i class="fas fa-pen"></i> Renombrar</a>
+        <a data-modal class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdGrupoCuenta })"><i class="fas fa-pen"></i> Renombrar</a>
         @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Grupos", new { id = Model.IdGrupoCuenta }, FormMethod.Post, new
         {
             data_confirmar = Model.Activo ? "¿Desactivar el grupo " + Model.Nombre + "?" : "¿Reactivar el grupo " + Model.Nombre + "?",
@@ -60,7 +60,7 @@
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#0b1b3d;"><i class="fas fa-building"></i></div><div class="kpi-tile-etiqueta">Cuentas</div><div class="kpi-tile-valor">@cuentasActivas</div>@if (cuentas.Count > cuentasActivas) { <span class="kpi-tile-detalle">+@(cuentas.Count - cuentasActivas) inactivas</span> }</div></div>
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@cajas.Count</div><span class="kpi-tile-detalle">@cajas.Count(k => k.IdGrupoCuenta == Model.IdGrupoCuenta) del grupo · @cajas.Count(k => k.IdGrupoCuenta != Model.IdGrupoCuenta) de sus cuentas</span></div></div>
     <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-truck-fast"></i></div><div class="kpi-tile-etiqueta">Transportistas</div><div class="kpi-tile-valor">@cajas.Where(k => k.IdTransportista.HasValue).Select(k => k.IdTransportista).Distinct().Count()</div><span class="kpi-tile-detalle">mueven sus cajas</span></div></div>
-    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#7c3aed;"><i class="fas fa-address-book"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@contactos</div><span class="kpi-tile-detalle">en sus cuentas activas</span></div></div>
+    <div class="col-6 col-lg-3"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d6fd1;"><i class="fas fa-address-book"></i></div><div class="kpi-tile-etiqueta">Contactos</div><div class="kpi-tile-valor">@contactos</div><span class="kpi-tile-detalle">en sus cuentas activas</span></div></div>
 </div>
 
 <ul class="nav pestanas-ep" role="tablist">
@@ -147,7 +147,7 @@
                         </div>
                         <div class="col-md-4 d-grid"><button type="submit" class="btn-corporativo"><i class="fas fa-plus"></i> Agregar al grupo</button></div>
                     }
-                    <p class="ayuda-campo mt-2 mb-0">Solo aparecen cuentas activas que no están en ningún grupo. ¿No existe? <a href="@Url.Action("Crear", "Cuentas", new { idGrupoCuenta = Model.IdGrupoCuenta })">Crea la cuenta</a> directo en este grupo.</p>
+                    <p class="ayuda-campo mt-2 mb-0">Solo aparecen cuentas activas que no están en ningún grupo. ¿No existe? <a data-modal="lg" href="@Url.Action("Crear", "Cuentas", new { idGrupoCuenta = Model.IdGrupoCuenta })">Crea la cuenta</a> directo en este grupo.</p>
                 </div>
             }
         </div>
@@ -215,7 +215,7 @@
                 </div>
             }
             <div class="tarjeta-ep-pie d-flex flex-wrap gap-2">
-                <a class="btn-suave btn-sm-ep" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-plus"></i> Nueva caja</a>
+                <a data-modal="lg" class="btn-suave btn-sm-ep" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-plus"></i> Nueva caja</a>
                 <a class="btn-suave btn-sm-ep" href="@Url.Action("Index", "Cajas", new { idGrupoCuenta = Model.IdGrupoCuenta })"><i class="fas fa-list"></i> Ver en el listado de cajas</a>
             </div>
         </div>

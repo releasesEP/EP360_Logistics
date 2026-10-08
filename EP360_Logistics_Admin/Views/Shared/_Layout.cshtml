@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/bootstrap/bootstrap.min.css")" />
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/fontawesome/css/all.min.css")" />
     <link rel="stylesheet" href="@Url.Content("~/Content/header-footer.css")" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=5")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=14")" />
 </head>
 @{
     var controlador = (string)ViewContext.RouteData.Values["controller"];
@@ -52,23 +52,20 @@
             <button type="button" class="btn-nuevo-topbar" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-plus"></i><span class="texto-nuevo"> Nuevo</span></button>
             <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
                 <div class="dropdown-header">Directorio</div>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Personas")"><i class="fas fa-user-plus"></i> Persona</a>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Cuentas")"><i class="fas fa-building"></i> Cuenta</a>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Grupos")"><i class="fas fa-layer-group"></i> Grupo de cuentas</a>
+                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Personas")"><i class="fas fa-user-plus"></i> Persona</a>
+                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cuentas")"><i class="fas fa-building"></i> Cuenta</a>
+                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Grupos")"><i class="fas fa-layer-group"></i> Grupo de cuentas</a>
                 <a class="dropdown-item" href="@Url.Action("Crear", "Sucursales")"><i class="fas fa-location-dot"></i> Sucursal</a>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-header">Flota</div>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-trailer"></i> Caja</a>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Transportistas")"><i class="fas fa-truck-fast"></i> Transportista</a>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Tractores")"><i class="fas fa-truck"></i> Tractor</a>
-                <a class="dropdown-item" href="@Url.Action("Crear", "Choferes")"><i class="fas fa-id-card"></i> Chofer</a>
+                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-trailer"></i> Caja</a>
+                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Transportistas")"><i class="fas fa-truck-fast"></i> Transportista</a>
+                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Tractores")"><i class="fas fa-truck"></i> Tractor</a>
+                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Choferes")"><i class="fas fa-id-card"></i> Chofer</a>
             </div>
         </div>
 
-        <span class="pastilla-usuario" title="Sesión de Windows: @usuario">
-            <span class="avatar-usuario">@TextoUtil.Iniciales(usuarioCorto)</span>
-            <span class="nombre-usuario">@usuarioCorto</span>
-        </span>
+        <span class="pastilla-usuario" title="Sesión de Windows: @usuario">@usuarioCorto</span>
     </header>
 
     <!-- ================= MENU DESPLEGABLE (se abre con la marca) ================= -->
@@ -147,15 +144,11 @@
                 <a class="menu-enlace @activo("Replicacion")" style="--i:9" href="@Url.Action("Index", "Replicacion")">
                     <span class="menu-enlace-icono"><i class="fas fa-database"></i></span>
                     <span class="menu-enlace-texto"><strong>Copia en el 11</strong><small>@(alertaReplicacion ?? "Replicación del 60 al servidor 11")</small></span>
-                    @if (alertaReplicacion != null) { <i class="fas fa-circle-exclamation" style="color:#c0392b;" title="@alertaReplicacion"></i> } else { <i class="fas fa-chevron-right menu-enlace-flecha"></i> }
+                    @if (alertaReplicacion != null) { <i class="fas fa-circle-exclamation" style="color:#4aa3e8;" title="@alertaReplicacion"></i> } else { <i class="fas fa-chevron-right menu-enlace-flecha"></i> }
                 </a>
             </nav>
 
             <div class="menu-panel-pie">
-                <div class="menu-panel-usuario" title="Sesión de Windows: @usuario">
-                    <span class="avatar-usuario">@TextoUtil.Iniciales(usuarioCorto)</span>
-                    <span><strong>@usuarioCorto</strong><small>Administrador del directorio global</small></span>
-                </div>
                 <div class="atajo">Abre y cierra este menú con <kbd>M</kbd> · cierra con <kbd>Esc</kbd></div>
             </div>
         </div>
@@ -174,6 +167,11 @@
     {
         <div id="datosAviso" hidden data-tipo="error" data-mensaje="@TempData["Error"]" data-cuerpo="Revisa los datos e inténtalo de nuevo."></div>
     }
+
+    <!-- Formularios cortos (alta/edicion) que se abren en modal; el contenido llega por fetch (ep-admin.js) -->
+    <div class="modal fade modal-formulario" id="modalFormulario" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:640px;"></div>
+    </div>
 
     <!-- Resultado de una accion -->
     <div class="modal fade" id="modalResultadoAccion" tabindex="-1" aria-hidden="true">
@@ -251,7 +249,7 @@
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="footer-version-pill" title="Versión del sistema"><i class="fas fa-code-branch" style="font-size:11px;"></i> 1.1.0</span>
+                    <a href="@Url.Action("Novedades", "Home")" class="footer-version-pill" title="Ver las novedades del sistema"><i class="fas fa-code-branch" style="font-size:11px;"></i> v1.3.0</a>
                     <span class="footer-portal-copyright">&copy; @DateTime.Now.Year - Directorio global</span>
                 </div>
             </div>
@@ -260,7 +258,7 @@
 
     <script src="@Url.Content("~/Content/lib/bootstrap/bootstrap.bundle.min.js")"></script>
     <script src="@Url.Content("~/Scripts/theme.js")"></script>
-    <script src="@Url.Content("~/Scripts/ep-admin.js?v=5")"></script>
+    <script src="@Url.Content("~/Scripts/ep-admin.js?v=9")"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

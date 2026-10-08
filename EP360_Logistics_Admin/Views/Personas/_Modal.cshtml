@@ -1,0 +1,106 @@
+@model EP360_Logistics_Admin.Models.PersonaModel
+@{
+    bool esNueva = Model.IdPersona == 0;
+    bool soloLectura = !esNueva && Model.EsAD;
+    var solo = soloLectura ? (object)new { @class = "form-control", @readonly = "readonly" } : new { @class = "form-control" };
+}
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNueva ? "Crear" : "Editar", "Personas", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdPersona)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas @(esNueva ? "fa-user-plus" : "fa-user-pen")"></i></span>
+                <span>@(esNueva ? "Nueva persona" : "Editar persona")<small>@(esNueva ? "Contacto o usuario externo. Los usuarios de AD llegan con la sincronización." : Model.NombreCompleto)</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+            @if (soloLectura)
+            {
+                <div class="aviso-ep mb-3"><i class="fab fa-windows"></i><span>Usuario de AD: nombre, correo, puesto, departamento y sucursal vienen de Active Directory. Aquí solo cambias teléfono y extensión.</span></div>
+            }
+
+            @if (esNueva)
+            {
+                <label class="d-block">Tipo de persona</label>
+                <div class="opciones-tarjeta mb-3">
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="TipoPersona" value="Contacto" @(Model.TipoPersona != "Externo" ? "checked" : "") />
+                        <span class="opcion-caja"><i class="fas fa-address-card"></i><span><strong>Contacto</strong><small>De un cliente, sin acceso a los portales.</small></span></span>
+                    </label>
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="TipoPersona" value="Externo" @(Model.TipoPersona == "Externo" ? "checked" : "") />
+                        <span class="opcion-caja"><i class="fas fa-key"></i><span><strong>Usuario externo</strong><small>Entra con su correo y contraseña propia.</small></span></span>
+                    </label>
+                </div>
+                @Html.ValidationMessageFor(m => m.TipoPersona, null, new { @class = "error-campo" })
+            }
+            else
+            {
+                @Html.HiddenFor(m => m.TipoPersona)
+            }
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    @Html.LabelFor(m => m.NombreCompleto)
+                    @Html.TextBoxFor(m => m.NombreCompleto, soloLectura ? solo : new { @class = "form-control", autofocus = "autofocus" })
+                    @Html.ValidationMessageFor(m => m.NombreCompleto, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Puesto)
+                    @Html.TextBoxFor(m => m.Puesto, solo)
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Correo)
+                    @Html.TextBoxFor(m => m.Correo, solo)
+                    @Html.ValidationMessageFor(m => m.Correo, null, new { @class = "error-campo" })
+                    @if (!soloLectura)
+                    {
+                        <span class="ayuda-campo d-block mt-1">Obligatorio para usuarios externos: es su usuario.</span>
+                    }
+                </div>
+                <div class="col-md-3">
+                    @Html.LabelFor(m => m.Telefono)
+                    @Html.TextBoxFor(m => m.Telefono, soloLectura ? new { @class = "form-control", autofocus = "autofocus" } : (object)new { @class = "form-control" })
+                </div>
+                <div class="col-md-3">
+                    @Html.LabelFor(m => m.Extension)
+                    @Html.TextBoxFor(m => m.Extension, new { @class = "form-control" })
+                </div>
+                @if (soloLectura)
+                {
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.IdDepartamento)
+                        <span class="campo-fijo">@(Model.Departamento ?? "—")</span>
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.IdSucursal)
+                        <span class="campo-fijo">@(Model.Sucursal ?? "—")</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.IdDepartamento)
+                        @Html.DropDownListFor(m => m.IdDepartamento, (IEnumerable<SelectListItem>)ViewBag.Departamentos, "(sin departamento)", new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.IdSucursal)
+                        @Html.DropDownListFor(m => m.IdSucursal, (IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "form-select" })
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNueva ? "Crear persona" : "Guardar")</button>
+        </div>
+    }
+</div>

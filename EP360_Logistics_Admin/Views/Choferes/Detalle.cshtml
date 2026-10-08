@@ -44,7 +44,7 @@
         </div>
     </div>
     <div class="perfil-acciones">
-        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
+        <a data-modal class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdChofer })"><i class="fas fa-pen"></i> Editar</a>
         @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Choferes", new { id = Model.IdChofer }, FormMethod.Post, new
         {
             data_confirmar = Model.Activo ? "¿Desactivar a " + Model.NombreCompleto + "?" : "¿Reactivar a " + Model.NombreCompleto + "?",

@@ -99,7 +99,7 @@ namespace EP360_Logistics_Admin.Controllers
             if (!ModelState.IsValid) return Formulario(modelo);
             int id;
             return EjecutarConId(() => _servicio.Crear(modelo), "Chofer creado.", out id)
-                ? (ActionResult)RedirectToAction("Detalle", new { id })
+                ? ExitoFormulario(Url.Action("Detalle", new { id }))
                 : Formulario(modelo);
         }
 
@@ -115,7 +115,7 @@ namespace EP360_Logistics_Admin.Controllers
         {
             if (!ModelState.IsValid) return Formulario(modelo);
             return Ejecutar(() => _servicio.Actualizar(modelo), "Chofer actualizado.")
-                ? (ActionResult)RedirectToAction("Detalle", new { id = modelo.IdChofer })
+                ? ExitoFormulario(Url.Action("Detalle", new { id = modelo.IdChofer }))
                 : Formulario(modelo);
         }
 
@@ -151,7 +151,7 @@ namespace EP360_Logistics_Admin.Controllers
         private ActionResult Formulario(ChoferModel modelo)
         {
             ViewBag.Transportistas = _catalogos.Transportistas(modelo.IdTransportista);
-            return View("Form", modelo);
+            return VistaFormulario("Form", "_Modal", modelo);
         }
     }
 }

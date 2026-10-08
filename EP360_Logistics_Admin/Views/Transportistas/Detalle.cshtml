@@ -1,4 +1,4 @@
-@model EP360_Logistics_Admin.Models.TransportistaModel
+﻿@model EP360_Logistics_Admin.Models.TransportistaModel
 @{
     ViewBag.Title = Model.Nombre;
     var tractores = (List<TractorModel>)ViewBag.Tractores;
@@ -50,7 +50,7 @@
         </div>
     </div>
     <div class="perfil-acciones">
-        <a class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdTransportista })"><i class="fas fa-pen"></i> Editar</a>
+        <a data-modal class="btn-suave" href="@Url.Action("Editar", new { id = Model.IdTransportista })"><i class="fas fa-pen"></i> Editar</a>
         @using (Html.BeginForm(Model.Activo ? "Desactivar" : "Reactivar", "Transportistas", new { id = Model.IdTransportista }, FormMethod.Post, new
         {
             data_confirmar = Model.Activo ? "¿Desactivar " + Model.Nombre + "?" : "¿Reactivar " + Model.Nombre + "?",
@@ -67,7 +67,7 @@
 
 <div class="row g-3 mb-3">
     <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#d97706;"><i class="fas fa-id-card"></i></div><div class="kpi-tile-etiqueta">Choferes</div><div class="kpi-tile-valor">@choferes.Count</div><span class="kpi-tile-detalle">Con liga activa</span></div></div>
-    <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#475569;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores activos</div><div class="kpi-tile-valor">@tractoresActivos<small>de @tractores.Count</small></div></div></div>
+    <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#64748b;"><i class="fas fa-truck"></i></div><div class="kpi-tile-etiqueta">Tractores activos</div><div class="kpi-tile-valor">@tractoresActivos<small>de @tractores.Count</small></div></div></div>
     <div class="col-sm-4"><div class="kpi-tile"><div class="kpi-tile-icono" style="--kpi-color:#1d4ed8;"><i class="fas fa-trailer"></i></div><div class="kpi-tile-etiqueta">Cajas</div><div class="kpi-tile-valor">@cajas.Count</div><span class="kpi-tile-detalle">Propias o que mueve habitualmente</span></div></div>
 </div>
 
@@ -87,7 +87,7 @@
                 <div class="listado-buscar" style="flex:0 1 280px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar económico, placa o VIN..." data-filtrar-tabla="#tablaTractores" data-filtrar-vacio="#vacioTractores" /></div>
                 @if (Model.Activo)
                 {
-                    <a class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Tractores", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Agregar tractor</a>
+                    <a data-modal class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Tractores", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Agregar tractor</a>
                 }
             </div>
             @if (tractores.Count == 0)
@@ -102,7 +102,7 @@
                         @foreach (var t in tractores)
                         {
                             <tr data-fila class="@(t.Activo ? "" : "inactiva")">
-                                <td><div class="celda-principal"><span class="avatar-ep cuadrado @(t.Activo ? "" : "av-gris")"><i class="fas fa-truck"></i></span><a class="nombre" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })">@t.Economico</a></div></td>
+                                <td><div class="celda-principal"><span class="avatar-ep cuadrado @(t.Activo ? "" : "av-gris")"><i class="fas fa-truck"></i></span><a data-modal class="nombre" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })">@t.Economico</a></div></td>
                                 <td>@(t.Placa ?? "—")</td>
                                 <td class="small">@(t.Vin ?? "—")</td>
                                 <td>@(t.Anio.HasValue ? t.Anio.Value.ToString() : "")@(t.Anio.HasValue && t.Marca != null ? " · " : "")@t.Marca@(!t.Anio.HasValue && t.Marca == null ? "—" : "")</td>
@@ -117,7 +117,7 @@
                                     }
                                 </td>
                                 <td class="celda-acciones">
-                                    <a class="btn-icono" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })" title="Editar"><i class="fas fa-pen"></i></a>
+                                    <a data-modal class="btn-icono" href="@Url.Action("Editar", "Tractores", new { id = t.IdTractor })" title="Editar"><i class="fas fa-pen"></i></a>
                                     @if (Model.Activo)
                                     {
                                         using (Html.BeginForm(t.Activo ? "Desactivar" : "Reactivar", "Tractores", new { id = t.IdTractor }, FormMethod.Post, new
@@ -151,7 +151,7 @@
                 <div class="listado-buscar" style="flex:0 1 280px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar nombre o licencia..." data-filtrar-tabla="#tablaChoferes" data-filtrar-vacio="#vacioChoferes" /></div>
                 @if (Model.Activo)
                 {
-                    <a class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Choferes", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Chofer nuevo</a>
+                    <a data-modal class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Choferes", new { idTransportista = Model.IdTransportista })"><i class="fas fa-plus"></i> Chofer nuevo</a>
                 }
             </div>
             @if (choferes.Count == 0)

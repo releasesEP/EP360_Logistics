@@ -65,6 +65,8 @@
     }, true);
 
     document.addEventListener("DOMContentLoaded", function () {
+        actualizarDependientes(document);
+
         // ---------- Menu desplegable (se abre con la marca) ----------
         var panel = $("#menuPanel");
         if (panel && window.bootstrap) {
@@ -169,21 +171,79 @@
                 b.addEventListener("shown.bs.tab", function () { history.replaceState(null, "", b.getAttribute("data-bs-target")); });
             });
         }
+    });
 
-        // ---------- Campos que se muestran segun una opcion (data-mostrar-si="nombreCampo=valor") ----------
-        var dependientes = $$("[data-mostrar-si]");
-        function actualizarDependientes() {
-            dependientes.forEach(function (el) {
-                var partes = el.getAttribute("data-mostrar-si").split("=");
-                var marcado = $("[name='" + partes[0] + "']:checked") || $("select[name='" + partes[0] + "']");
-                var valores = partes[1].split("|");
-                el.style.display = marcado && valores.indexOf(marcado.value) >= 0 ? "" : "none";
+    // ---------- Campos que se muestran segun una opcion (data-mostrar-si="NombreCampo=valor|otro") ----------
+    // Se evaluan por formulario y en vivo, asi tambien funcionan en el contenido que llega a un modal.
+    function actualizarDependientes(contexto) {
+        $$("[data-mostrar-si]", contexto).forEach(function (el) {
+            var partes = el.getAttribute("data-mostrar-si").split("=");
+            var form = el.closest("form") || document;
+            var marcado = $("[name='" + partes[0] + "']:checked", form) || $("select[name='" + partes[0] + "']", form);
+            el.style.display = marcado && partes[1].split("|").indexOf(marcado.value) >= 0 ? "" : "none";
+        });
+    }
+
+    document.addEventListener("change", function (e) {
+        var t = e.target;
+        // data-excluye="OtroCampo": elegir un valor aqui limpia el otro (ej. grupo o cuenta, no ambos).
+        if (t.getAttribute && t.getAttribute("data-excluye") && t.value) {
+            var otro = $("[name='" + t.getAttribute("data-excluye") + "']", t.closest("form") || document);
+            if (otro) otro.value = "";
+        }
+        var form = t.closest ? t.closest("form") : null;
+        if (form) actualizarDependientes(form);
+    });
+
+    // ---------- Formularios cortos en modal (enlaces con data-modal) ----------
+    // El enlace sigue apuntando a la pagina del formulario: sin JS, o si algo falla, se navega normal.
+    var CABECERA_AJAX = { "X-Requested-With": "XMLHttpRequest" };
+
+    function prepararModal(dialogo) {
+        actualizarDependientes(dialogo);
+        var campo = $("[autofocus]", dialogo) || $("input:not([type=hidden]), select", dialogo);
+        if (campo) setTimeout(function () { campo.focus(); }, 200);
+    }
+
+    document.addEventListener("click", function (e) {
+        var enlace = e.target.closest ? e.target.closest("a[data-modal]") : null;
+        if (!enlace || !window.bootstrap || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault();
+        var modal = $("#modalFormulario"), dialogo = $(".modal-dialog", modal);
+        // data-modal="lg" para los formularios con mas campos (personas, cuentas, cajas).
+        dialogo.style.maxWidth = enlace.getAttribute("data-modal") === "lg" ? "860px" : "640px";
+        fetch(enlace.href, { headers: CABECERA_AJAX, credentials: "same-origin" })
+            .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(function (html) {
+                dialogo.innerHTML = html;
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+                prepararModal(dialogo);
+            })
+            .catch(function () { location.href = enlace.href; });
+    });
+
+    document.addEventListener("submit", function (e) {
+        var form = e.target;
+        if (!form.hasAttribute || !form.hasAttribute("data-form-modal")) return;
+        e.preventDefault();
+        var boton = $("button[type=submit]", form), textoBoton = boton ? boton.innerHTML : "";
+        if (boton) { boton.disabled = true; boton.innerHTML = '<span class="cargando-ep"></span> Guardando…'; }
+        fetch(form.action, { method: "POST", body: new FormData(form), headers: CABECERA_AJAX, credentials: "same-origin" })
+            .then(function (r) {
+                var tipo = r.headers.get("Content-Type") || "";
+                return tipo.indexOf("application/json") >= 0 ? r.json() : r.text();
+            })
+            .then(function (respuesta) {
+                if (respuesta && respuesta.ok) { location.href = respuesta.url; return; }
+                // Volvio el formulario con el error (validacion o regla de la BD): se queda abierto con lo capturado.
+                var dialogo = form.closest(".modal-dialog");
+                dialogo.innerHTML = respuesta;
+                prepararModal(dialogo);
+            })
+            .catch(function () {
+                if (boton) { boton.disabled = false; boton.innerHTML = textoBoton; }
+                mostrarResultado("error", "No se pudo guardar", "Revisa tu conexión e inténtalo de nuevo.");
             });
-        }
-        if (dependientes.length) {
-            document.addEventListener("change", actualizarDependientes);
-            actualizarDependientes();
-        }
     });
 
     window.EPAdmin = { mostrarResultado: mostrarResultado };
