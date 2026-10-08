@@ -50,19 +50,14 @@ namespace EP360_Logistics_Admin.Controllers
             return View(new Paginado<SucursalAdminModel>(resultado, pagina, tam));
         }
 
+        // Las sucursales ya NO se crean a mano (2026-10-08, decision del usuario): dependen de la
+        // sincronizacion con AD (la oficina que trae cada usuario), asi que dar de alta una aqui
+        // generaria inconsistencias. Se mantiene la ruta solo para redirigir con un aviso, por si
+        // alguien entra por un enlace o marcador viejo (GET o POST).
         public ActionResult Crear()
         {
-            return View("Form", new SucursalAdminModel());
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Crear(SucursalAdminModel modelo)
-        {
-            if (!ModelState.IsValid) return View("Form", modelo);
-            int id;
-            return EjecutarConId(() => _servicio.Crear(modelo), "Sucursal creada.", out id)
-                ? (ActionResult)RedirectToAction("Index")
-                : View("Form", modelo);
+            TempData["Error"] = "Las sucursales no se crean manualmente: se generan con la sincronización de AD.";
+            return RedirectToAction("Index");
         }
 
         public ActionResult Editar(int id)
