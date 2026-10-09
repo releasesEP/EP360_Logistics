@@ -154,6 +154,19 @@
     </aside>
 
     <main class="contenido-portal">
+        @* Aviso visible (2026-10-09): antes el estado de la copia al 11 solo se veia dentro del menu lateral y una
+           cola detenida paso un dia entero sin que nadie lo notara. Se oculta en la propia pantalla de Replicacion. *@
+        @if (alertaReplicacion != null && controlador != "Replicacion")
+        {
+            <div class="aviso-replicacion" role="alert">
+                <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                <div class="aviso-replicacion__texto">
+                    <strong>La copia de datos al servidor 11 necesita atención.</strong>
+                    @(alertaReplicacion). Lo que se guarda aquí queda en el 60, pero no llega al 11 hasta resolverlo.
+                </div>
+                <a class="aviso-replicacion__enlace" href="@Url.Action("Index", "Replicacion")">Ver y resolver</a>
+            </div>
+        }
         @RenderBody()
     </main>
 
