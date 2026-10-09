@@ -210,8 +210,24 @@ namespace EP360_Logistics_Admin.DAL.Infraestructura
             {
                 comando.Parameters.AddRange(Deserializar(pendiente.Parametros));
                 conexion.Open();
-                object r = comando.ExecuteScalar();
-                return r == null || r == DBNull.Value ? null : Convert.ToString(r, CultureInfo.InvariantCulture);
+                using (var lector = comando.ExecuteReader())
+                {
+                    if (!lector.Read()) return null;
+
+                    // Mismo valor que se guardo del 60 (2026-10-09). En el 60 el resultado sale de AccesoSP:
+                    // Escalar -> primera columna (el id generado); UnoEscritura -> la columna "accion" (ej.
+                    // sync.sp_SincronizarUsuarioAD devuelve idPersona + accion y se guarda "accion"). Antes aqui
+                    // se leia SIEMPRE la primera columna (ExecuteScalar): para ese SP comparaba idPersona contra
+                    // "Actualizacion"/"Alta" y toda operacion salia Divergente aunque los datos fueran iguales.
+                    int columna = 0;
+                    for (int i = 0; i < lector.FieldCount; i++)
+                    {
+                        if (string.Equals(lector.GetName(i), "accion", StringComparison.OrdinalIgnoreCase)) { columna = i; break; }
+                    }
+
+                    object r = lector.GetValue(columna);
+                    return r == null || r == DBNull.Value ? null : Convert.ToString(r, CultureInfo.InvariantCulture);
+                }
             }
         }
 
