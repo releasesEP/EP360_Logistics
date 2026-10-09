@@ -21,6 +21,7 @@ namespace EP360_Logistics_Admin.Services
         };
 
         private readonly SincronizacionDAL _dal = new SincronizacionDAL();
+        private readonly SucursalDAL _sucursalDAL = new SucursalDAL();
         private readonly ActiveDirectoryService _ad = new ActiveDirectoryService();
 
         public List<SincronizacionADModel> Historial(int maximo = 20) { return _dal.Historial(maximo); }
@@ -47,6 +48,31 @@ namespace EP360_Logistics_Admin.Services
             if (string.IsNullOrWhiteSpace(u.Compania)) faltan.Add("compañía");
             if (string.IsNullOrWhiteSpace(u.Jefe)) faltan.Add("jefe");
             return faltan;
+        }
+
+        // Al terminar de procesar a todas las personas: una sucursal que quedo sin personas ni cuentas (ej. una oficina mal escrita en AD
+        // que luego se corrigio) se desactiva, y una que se desactivo asi y volvio a tener gente se reactiva. Lo que cambio se calcula
+        // comparando la lista antes y despues (el procedimiento no devuelve conteos, ver Database/14_SucursalesSinUso.sql).
+        // Un fallo aqui no tira la sincronizacion: se reporta como error de la corrida.
+        private void ReconciliarSucursales(ResultadoSincronizacionModel resultado, StringBuilder detalle)
+        {
+            try
+            {
+                var antes = _sucursalDAL.Listar().ToDictionary(s => s.IdSucursal, s => s.Activo);
+                _sucursalDAL.Reconciliar();
+                foreach (var s in _sucursalDAL.Listar())
+                {
+                    bool estabaActiva;
+                    if (!antes.TryGetValue(s.IdSucursal, out estabaActiva) || estabaActiva == s.Activo) continue;
+                    (s.Activo ? resultado.SucursalesReactivadas : resultado.SucursalesDesactivadas).Add(s.Nombre);
+                }
+            }
+            catch (SqlException ex)
+            {
+                resultado.Errores++;
+                detalle.AppendLine("Sucursales sin uso: " + ex.Message +
+                    (ex.Number == 2812 ? " (falta correr Database/14_SucursalesSinUso.sql en este servidor)" : ""));
+            }
         }
 
         // Si ya hay otra corrida en curso, Iniciar lanza SqlException 50031 (la muestra el controlador).
@@ -108,6 +134,7 @@ namespace EP360_Logistics_Admin.Services
                 }
 
                 bool fallida = usuarios.Count == 0 && errorLectura != null;
+                if (!fallida) ReconciliarSucursales(resultado, detalle);
                 resultado.Estado = fallida ? "Fallida" : (resultado.Errores > 0 ? "ConErrores" : "Terminada");
             }
             catch (Exception ex)

@@ -14,6 +14,27 @@ namespace EP360_Logistics_Admin.Helpers
         private static DateTime _consultadoEn = DateTime.MinValue;
         private static string _texto;
 
+        // Estado EN ESTE MOMENTO, sin cache ni umbral de espera (2026-10-09): se usa justo despues de guardar algo
+        // para avisar al administrador si ese cambio (u otros) quedaron sin copiar al 11. null = todo copiado.
+        public static string TextoInmediato()
+        {
+            if (!Replicador.Configurada) return null;
+            try
+            {
+                var r = new ReplicacionDAL().Resumen();
+                if (r == null) return null;
+                if (r.Divergentes > 0)
+                    return "la copia al 11 está detenida por " + r.Divergentes + " operación(es) divergente(s) (" + r.Pendientes + " cambio(s) en espera)";
+                if (r.Pendientes > 0)
+                    return "quedaron " + r.Pendientes + " cambio(s) sin copiar al 11";
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         // null = todo bien (o la copia no esta configurada).
         public static string Texto()
         {

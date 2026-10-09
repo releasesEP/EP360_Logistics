@@ -13,7 +13,15 @@ namespace EP360_Logistics_Admin.Controllers
             try
             {
                 accion();
-                if (!string.IsNullOrEmpty(mensajeExito)) TempData["Exito"] = mensajeExito;
+                if (!string.IsNullOrEmpty(mensajeExito))
+                {
+                    // El cambio ya quedo en el 60. Si la copia al 11 no esta al dia (11 sin responder o cola detenida),
+                    // se dice aqui mismo en vez de que nadie se entere hasta abrir la pantalla de Replicacion.
+                    string pendienteCopia = Helpers.AlertaReplicacion.TextoInmediato();
+                    TempData["Exito"] = pendienteCopia == null
+                        ? mensajeExito
+                        : mensajeExito + " Ojo: " + pendienteCopia + "; este cambio se copiará cuando se resuelva (Copia en el 11).";
+                }
                 return true;
             }
             catch (InvalidOperationException ex)
