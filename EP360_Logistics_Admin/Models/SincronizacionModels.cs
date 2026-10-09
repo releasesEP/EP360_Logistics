@@ -34,6 +34,10 @@ namespace EP360_Logistics_Admin.Models
         public int Bajas { get; set; }
         public int NoCumplenReglas { get; set; }
         public int CuentasDeSistema { get; set; }
+
+        // Sucursales que la sincronizacion retiro por quedar sin personas ni cuentas (o volvio a activar), por nombre.
+        public System.Collections.Generic.List<string> SucursalesDesactivadas { get; set; } = new System.Collections.Generic.List<string>();
+        public System.Collections.Generic.List<string> SucursalesReactivadas { get; set; } = new System.Collections.Generic.List<string>();
         public System.Collections.Generic.Dictionary<string, int> FaltantesPorRegla { get; set; } = new System.Collections.Generic.Dictionary<string, int>();
     }
 

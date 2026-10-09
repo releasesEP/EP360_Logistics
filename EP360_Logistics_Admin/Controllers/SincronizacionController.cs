@@ -30,7 +30,11 @@ namespace EP360_Logistics_Admin.Controllers
                                  "No cumplieron las reglas: " + resultado.NoCumplenReglas +
                                  (resultado.FaltantesPorRegla.Count == 0 ? "" :
                                     " (les falta: " + string.Join(", ", resultado.FaltantesPorRegla.Select(x => x.Key + " " + x.Value)) + ")") +
-                                 ". Cuentas de sistema excluidas: " + resultado.CuentasDeSistema + ".";
+                                 ". Cuentas de sistema excluidas: " + resultado.CuentasDeSistema + "." +
+                                 (resultado.SucursalesDesactivadas.Count == 0 ? "" :
+                                    " Sucursales desactivadas por quedar sin personas: " + string.Join(", ", resultado.SucursalesDesactivadas) + ".") +
+                                 (resultado.SucursalesReactivadas.Count == 0 ? "" :
+                                    " Sucursales reactivadas por volver a tener personas: " + string.Join(", ", resultado.SucursalesReactivadas) + ".");
                 if (resultado.Estado == "Terminada") TempData["Exito"] = resumen; else TempData["Error"] = resumen;
             }
             return RedirectToAction("Index");

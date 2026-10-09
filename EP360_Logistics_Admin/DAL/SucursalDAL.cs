@@ -31,5 +31,9 @@ namespace EP360_Logistics_Admin.DAL
         public void Desactivar(int id) { Ejecutar("dir.sp_DesactivarSucursal", P("@idSucursal", id)); }
 
         public void Reactivar(int id) { Ejecutar("dir.sp_ReactivarSucursal", P("@idSucursal", id)); }
+
+        // Final de cada sincronizacion con AD (Database/14_SucursalesSinUso.sql): desactiva las que ya no tienen personas ni cuentas
+        // y reactiva las que ella misma desactivo si volvieron a tener personas. Sin resultado: el Replicador compara resultados 60 vs 11.
+        public void Reconciliar() { Ejecutar("dir.sp_ReconciliarSucursales"); }
     }
 }

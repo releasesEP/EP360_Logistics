@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using EP360_Logistics_Admin.DAL.Infraestructura;
 using EP360_Logistics_Admin.Models;
 using static EP360_Logistics_Admin.DAL.Infraestructura.AccesoSP;
@@ -23,11 +24,21 @@ namespace EP360_Logistics_Admin.DAL
         // Devuelve la accion realizada: Alta, Actualizacion u Omitido.
         public string SincronizarUsuario(UsuarioADModel u, bool cumpleReglas)
         {
-            return UnoEscritura("sync.sp_SincronizarUsuarioAD", r => r.Texto("accion"),
+            var resultado = UnoEscritura("sync.sp_SincronizarUsuarioAD", r => new ResultadoSincronizarUsuario { Accion = r.Texto("accion"), IdPersona = r.EnteroNulo("idPersona") },
                 P("@objectSid", u.ObjectSid), P("@samAccountName", u.SamAccountName), P("@nombreCompleto", u.NombreCompleto),
                 P("@userPrincipalName", u.UserPrincipalName), P("@correoAD", u.Correo), P("@puesto", u.Puesto),
                 P("@departamento", u.Departamento), P("@sucursal", u.Sucursal),
                 P("@habilitadoAD", u.Habilitado), P("@cumpleReglas", cumpleReglas));
+            return resultado == null ? null : resultado.Accion;
+        }
+
+        // El Replicador compara, entre el 60 y el 11, el texto de la PRIMERA columna que devuelve el SP (idPersona; NULL si se omitio).
+        // Guardar aqui la accion (Alta/Actualizacion) hacia que toda actualizacion se marcara Divergente.
+        private class ResultadoSincronizarUsuario
+        {
+            public string Accion;
+            public int? IdPersona;
+            public override string ToString() { return IdPersona.HasValue ? IdPersona.Value.ToString(CultureInfo.InvariantCulture) : null; }
         }
 
         public List<SincronizacionADModel> Historial(int maximo)
