@@ -8,7 +8,7 @@ name: CD - Desplegar a IIS (prod)
 # Variables del repo (Settings > Secrets and variables > Actions > Variables):
 #   RUTA_SITIO_IIS   ruta fisica del sitio   (C:\inetpub\Aplicaciones\EP360Logistics\Produccion)
 #   NOMBRE_APP_POOL  application pool        (ep360logistics)
-#   URL_PRUEBA_HUMO  URL para la prueba de humo (el binding real del sitio)
+#   URL_SITIO  URL para la prueba de humo (el binding real del sitio)
 #
 # La configuracion real NO viaja en el artefacto ni se escribe desde aqui: ConnectionStrings.config y
 # AppSettings.config viven solo en el servidor (dentro de RUTA_SITIO_IIS) y el Robocopy los excluye.
@@ -90,7 +90,7 @@ jobs:
           $sitio = "${{ vars.RUTA_SITIO_IIS }}"
           if (-not $sitio) { throw "Falta la variable RUTA_SITIO_IIS del repo." }
           if (-not "${{ vars.NOMBRE_APP_POOL }}") { throw "Falta la variable NOMBRE_APP_POOL del repo." }
-          if (-not "${{ vars.URL_PRUEBA_HUMO }}") { throw "Falta la variable URL_PRUEBA_HUMO del repo." }
+          if (-not "${{ vars.URL_SITIO }}") { throw "Falta la variable URL_SITIO del repo." }
           New-Item -ItemType Directory -Force -Path $sitio | Out-Null
           # Los .config reales viven solo en el servidor. Si no existen (primer deploy) se crean aqui
           # sin secretos (Integrated Security); si ya existen NO se tocan.
@@ -181,7 +181,7 @@ jobs:
       - name: Prueba de humo HTTP
         shell: powershell
         run: |
-          $url = "${{ vars.URL_PRUEBA_HUMO }}"
+          $url = "${{ vars.URL_SITIO }}"
           $codigo = 0
           for ($i = 1; $i -le 6; $i++) {
             try {
