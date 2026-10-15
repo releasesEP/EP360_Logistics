@@ -12,6 +12,7 @@ namespace EP360_Logistics_Admin.Controllers
     {
         private readonly GrupoCuentaService _servicio = new GrupoCuentaService();
         private readonly CuentaService _cuentaServicio = new CuentaService();
+        private readonly PersonaService _personaServicio = new PersonaService();
 
         public ActionResult Index(string estado, string buscar, string orden, int pagina = 1, int tam = 25, string formato = null)
         {
@@ -64,7 +65,7 @@ namespace EP360_Logistics_Admin.Controllers
             var cuentas = _servicio.CuentasDelGrupo(id);
             ViewBag.Cuentas = cuentas;
             ViewBag.Cajas = _servicio.CajasDelGrupo(id);
-            ViewBag.Contactos = _servicio.ContactosDelGrupo(cuentas);
+            ViewBag.Contactos = _servicio.ContactosDelGrupo(cuentas);   // List<GrupoContactoModel>
             ViewBag.CuentasSinGrupo = _servicio.CuentasSinGrupo()
                 .Select(c => new SelectListItem { Value = c.IdCuenta.ToString(), Text = c.NombreComercial })
                 .ToList();
@@ -122,6 +123,18 @@ namespace EP360_Logistics_Admin.Controllers
             if (idCuenta == null) TempData["Error"] = "Elige una cuenta.";
             else Ejecutar(() => _cuentaServicio.AsignarGrupo(idCuenta.Value, idGrupoCuenta), "Cuenta agregada al grupo.");
             return Redirect(Url.Action("Detalle", new { id = idGrupoCuenta }) + "#cuentas");
+        }
+
+        // Liga al contacto a las cuentas activas del grupo donde todavia no lo esta (las que ya tiene no se tocan).
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult CompletarContacto(int idGrupoCuenta, int idPersona)
+        {
+            var ligadas = new List<int>();
+            if (Ejecutar(() => { ligadas = _personaServicio.VincularVarias(idPersona, null, idGrupoCuenta, null, null); }, null))
+                Ejecutar(() => { }, ligadas.Count == 0
+                    ? "Ya era contacto de todas las cuentas del grupo."
+                    : "Ligado a " + ligadas.Count + (ligadas.Count == 1 ? " cuenta más del grupo." : " cuentas más del grupo."));
+            return Redirect(Url.Action("Detalle", new { id = idGrupoCuenta }) + "#contactos");
         }
 
         [HttpPost, ValidateAntiForgeryToken]

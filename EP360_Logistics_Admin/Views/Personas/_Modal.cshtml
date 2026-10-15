@@ -97,6 +97,15 @@
                     </div>
                 }
             </div>
+
+            @if (esNueva)
+            {
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <hr class="my-3" />
+                <h6 class="mb-1"><i class="fas fa-building"></i> ¿De qué cliente es? <small class="texto-tenue fw-normal">(opcional)</small></h6>
+                <p class="ayuda-campo mb-2">Liga a la persona desde que se crea, a cuentas sueltas y/o a un grupo completo.</p>
+                @Html.Partial("_VinculoCuentas")
+            }
         </div>
         <div class="modal-footer">
             <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>

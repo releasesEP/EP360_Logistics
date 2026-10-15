@@ -208,7 +208,7 @@
                         <div class="col-md-2"><input type="text" name="puestoEnCuenta" class="form-control" placeholder="Puesto" maxlength="120" /></div>
                         <div class="col-md-2 d-grid"><button type="submit" class="btn-corporativo"><i class="fas fa-link"></i> Ligar</button></div>
                     }
-                    <p class="ayuda-campo mt-2 mb-0">¿No está en la lista? <a data-modal="lg" href="@Url.Action("Crear", "Personas")">Da de alta a la persona</a> y ligala aquí. Solo aparecen contactos y usuarios externos.</p>
+                    <p class="ayuda-campo mt-2 mb-0">¿No está en la lista? <a data-modal="lg" href="@Url.Action("Crear", "Personas", new { idCuenta = Model.IdCuenta, returnUrl = Url.Action("Detalle", new { id = Model.IdCuenta }) + "#contactos" })">Da de alta a la persona</a> y queda ligada a esta cuenta desde que se crea. Solo aparecen contactos y usuarios externos.</p>
                 </div>
             }
         </div>

@@ -4,7 +4,8 @@
     var cuentas = (List<CuentaModel>)ViewBag.Cuentas;
     var cajas = (List<CajaModel>)ViewBag.Cajas;
     var sinGrupo = (IEnumerable<SelectListItem>)ViewBag.CuentasSinGrupo;
-    int contactos = ViewBag.Contactos;
+    var contactosGrupo = (List<GrupoContactoModel>)ViewBag.Contactos;
+    int contactos = contactosGrupo.Count;
     int cuentasActivas = cuentas.Count(c => c.Activo);
     string volver = Request.RawUrl;
 }
@@ -65,6 +66,7 @@
 
 <ul class="nav pestanas-ep" role="tablist">
     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cuentas" type="button" role="tab"><i class="fas fa-building"></i> Cuentas del grupo <span class="contador">@cuentas.Count</span></button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#contactos" type="button" role="tab"><i class="fas fa-address-book"></i> Contactos <span class="contador">@contactos</span></button></li>
     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cajas" type="button" role="tab"><i class="fas fa-trailer"></i> Cajas <span class="contador">@cajas.Count</span></button></li>
 </ul>
 
@@ -148,6 +150,102 @@
                         <div class="col-md-4 d-grid"><button type="submit" class="btn-corporativo"><i class="fas fa-plus"></i> Agregar al grupo</button></div>
                     }
                     <p class="ayuda-campo mt-2 mb-0">Solo aparecen cuentas activas que no están en ningún grupo. ¿No existe? <a data-modal="lg" href="@Url.Action("Crear", "Cuentas", new { idGrupoCuenta = Model.IdGrupoCuenta })">Crea la cuenta</a> directo en este grupo.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="contactos" role="tabpanel">
+        <div class="tarjeta-ep">
+            <div class="tarjeta-ep-encabezado">
+                <h6><i class="fas fa-address-book"></i> Contactos del cliente <span class="contador">@contactos</span></h6>
+                <p>Cada persona una sola vez, con las cuentas activas del grupo de las que es contacto.</p>
+            </div>
+            @if (contactosGrupo.Count == 0)
+            {
+                <div class="vacio-ep">
+                    <div class="vacio-icono"><i class="fas fa-user-slash"></i></div>
+                    <h6>Sin contactos</h6>
+                    <p>Ninguna cuenta activa de este grupo tiene contactos todavía.</p>
+                </div>
+            }
+            else
+            {
+                <div class="px-3 pt-3">
+                    <div class="listado-buscar" style="max-width:360px;"><i class="fas fa-magnifying-glass"></i><input type="search" placeholder="Buscar persona, correo o cuenta..." data-filtrar-tabla="#tablaContactosGrupo" data-filtrar-vacio="#contactosGrupoVacio" /></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="tabla-ep" id="tablaContactosGrupo">
+                        <thead><tr><th>Persona</th><th>Tipo</th><th>Teléfono</th><th>Cuentas del grupo</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var p in contactosGrupo)
+                            {
+                                <tr data-fila>
+                                    <td>
+                                        <div class="celda-principal">
+                                            <span class="avatar-ep @(p.TipoPersona == "Externo" ? "av-morado" : p.TipoPersona == "Contacto" ? "av-ambar" : "")">@TextoUtil.Iniciales(p.NombrePersona)</span>
+                                            <div style="min-width:0;">
+                                                <a class="nombre" href="@Url.Action("Detalle", "Personas", new { id = p.IdPersona })">@p.NombrePersona</a>
+                                                <span class="sub">@(p.Correo ?? "Sin correo")</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (p.TipoPersona == "Externo")
+                                        {
+                                            <span class="pastilla pastilla-morado"><i class="fas fa-key"></i>Externo</span>
+                                        }
+                                        else if (p.TipoPersona == "AD")
+                                        {
+                                            <span class="pastilla pastilla-azul"><i class="fab fa-windows"></i>AD</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="pastilla pastilla-ambar"><i class="fas fa-address-card"></i>Contacto</span>
+                                        }
+                                    </td>
+                                    <td>@(p.Telefono ?? "—")</td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var v in p.Vinculos)
+                                            {
+                                                string detalleVinculo = string.Join(" · ", new[] { v.Categoria, v.PuestoEnCuenta }.Where(x => !string.IsNullOrEmpty(x)));
+                                                <a class="pastilla pastilla-azul" href="@Url.Action("Detalle", "Cuentas", new { id = v.IdCuenta })" title="@(detalleVinculo == "" ? "Sin categoría ni puesto" : detalleVinculo)"><i class="fas fa-building"></i>@v.Cuenta</a>
+                                            }
+                                        </div>
+                                        @if (p.Faltantes.Count > 0)
+                                        {
+                                            <span class="sub d-block mt-1">Falta en: @string.Join(", ", p.Faltantes.Select(c => c.NombreComercial))</span>
+                                        }
+                                    </td>
+                                    <td class="celda-acciones">
+                                        @if (Model.Activo && p.Faltantes.Count > 0)
+                                        {
+                                            using (Html.BeginForm("CompletarContacto", "Grupos", FormMethod.Post, new
+                                            {
+                                                data_confirmar = "¿Ligar a " + p.NombrePersona + " a las demás cuentas del grupo?",
+                                                data_confirmar_detalle = "Será contacto de " + string.Join(", ", p.Faltantes.Select(c => c.NombreComercial)) + ". Las cuentas donde ya lo es no cambian.",
+                                                data_confirmar_boton = "Sí, ligar"
+                                            }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idGrupoCuenta" value="@Model.IdGrupoCuenta" />
+                                                <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                                                <button type="submit" class="btn-suave btn-sm-ep"><i class="fas fa-link"></i> Ligar a todas</button>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            <tr id="contactosGrupoVacio" style="display:none;"><td colspan="5" class="text-center texto-tenue py-4">Ningún contacto coincide con la búsqueda.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+            @if (Model.Activo)
+            {
+                <div class="tarjeta-ep-pie d-flex flex-wrap gap-2">
+                    <a data-modal="lg" class="btn-corporativo btn-sm-ep" href="@Url.Action("Crear", "Personas", new { idGrupoCuenta = Model.IdGrupoCuenta, returnUrl = Url.Action("Detalle", new { id = Model.IdGrupoCuenta }) + "#contactos" })"><i class="fas fa-user-plus"></i> Agregar contacto</a>
                 </div>
             }
         </div>

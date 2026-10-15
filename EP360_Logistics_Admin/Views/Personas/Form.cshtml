@@ -109,6 +109,15 @@
                     }
                 </div>
             </div>
+
+            @if (esNueva)
+            {
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <div class="form-seccion">
+                    <div class="form-seccion-titulo"><span class="form-paso">4</span> ¿De qué cliente es? <small class="texto-tenue">(opcional)</small></div>
+                    @Html.Partial("_VinculoCuentas")
+                </div>
+            }
         </div>
         <div class="form-ep-pie">
             <a class="btn-suave" href="@urlCancelar">Cancelar</a>
