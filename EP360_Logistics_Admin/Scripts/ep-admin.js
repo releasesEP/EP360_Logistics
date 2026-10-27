@@ -234,7 +234,13 @@
                 return tipo.indexOf("application/json") >= 0 ? r.json() : r.text();
             })
             .then(function (respuesta) {
-                if (respuesta && respuesta.ok) { location.href = respuesta.url; return; }
+                if (respuesta && respuesta.ok) {
+                    // Mismo documento y solo cambia el #hash: el navegador no recarga, y hay que ver lo recien guardado.
+                    var mismaPagina = new URL(respuesta.url, location.href).href.split("#")[0] === location.href.split("#")[0];
+                    location.href = respuesta.url;
+                    if (mismaPagina) location.reload();
+                    return;
+                }
                 // Volvio el formulario con el error (validacion o regla de la BD): se queda abierto con lo capturado.
                 var dialogo = form.closest(".modal-dialog");
                 dialogo.innerHTML = respuesta;

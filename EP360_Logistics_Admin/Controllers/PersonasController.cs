@@ -92,27 +92,63 @@ namespace EP360_Logistics_Admin.Controllers
                 .Where(c => !yaVinculadas.Contains(c.IdCuenta))
                 .Select(c => new SelectListItem { Value = c.IdCuenta.ToString(), Text = c.NombreComercial })
                 .ToList();
+            ViewBag.GruposLigables = _catalogos.Grupos();
             return View(persona);
         }
 
-        public ActionResult Crear()
+        // idCuenta / idGrupoCuenta preseleccionan a que cliente se liga la persona desde que se crea;
+        // returnUrl regresa a la pantalla de origen (ej. el grupo) en vez del detalle de la persona.
+        public ActionResult Crear(int? idCuenta, int? idGrupoCuenta, string returnUrl)
         {
+            ViewBag.IdCuentasSel = idCuenta.HasValue ? new[] { idCuenta.Value } : new int[0];
+            ViewBag.IdGrupoSel = idGrupoCuenta;
+            ViewBag.ReturnUrl = returnUrl;
             return Formulario(new PersonaModel { TipoPersona = "Contacto" });
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Crear(PersonaModel modelo)
+        public ActionResult Crear(PersonaModel modelo, int[] idCuentas, int? idGrupoCuenta, string categoria, string puestoEnCuenta, string returnUrl)
         {
             if (modelo.TipoPersona != "Contacto" && modelo.TipoPersona != "Externo")
                 ModelState.AddModelError("TipoPersona", "Solo se pueden crear contactos o usuarios externos; los usuarios de AD se sincronizan.");
             if (modelo.TipoPersona == "Externo" && string.IsNullOrWhiteSpace(modelo.Correo))
                 ModelState.AddModelError("Correo", "Un usuario externo necesita correo.");
-            if (!ModelState.IsValid) return Formulario(modelo);
+            if (!ModelState.IsValid)
+            {
+                ViewBag.IdCuentasSel = idCuentas ?? new int[0];
+                ViewBag.IdGrupoSel = idGrupoCuenta;
+                ViewBag.ReturnUrl = returnUrl;
+                return Formulario(modelo);
+            }
 
             int id;
-            return EjecutarConId(() => _servicio.Crear(modelo), "Persona creada.", out id)
-                ? ExitoFormulario(Url.Action("Detalle", new { id }))
-                : Formulario(modelo);
+            if (!EjecutarConId(() => _servicio.Crear(modelo), null, out id))
+            {
+                ViewBag.IdCuentasSel = idCuentas ?? new int[0];
+                ViewBag.IdGrupoSel = idGrupoCuenta;
+                ViewBag.ReturnUrl = returnUrl;
+                return Formulario(modelo);
+            }
+
+            // La persona ya existe: si ligarla falla no se vuelve a mostrar el formulario (duplicaria a la persona),
+            // se avisa y se deja en su detalle para completar el vinculo desde ahi.
+            var ligadas = new List<int>();
+            string mensaje = "Persona creada.";
+            bool pidioVinculo = (idCuentas != null && idCuentas.Length > 0) || idGrupoCuenta.HasValue;
+            if (pidioVinculo)
+            {
+                if (Ejecutar(() => { ligadas = _servicio.VincularVarias(id, idCuentas, idGrupoCuenta, categoria, puestoEnCuenta); }, null))
+                    mensaje = "Persona creada y ligada a " + ligadas.Count + (ligadas.Count == 1 ? " cuenta." : " cuentas.");
+                else
+                {
+                    TempData["Error"] = "La persona se creó, pero no se pudo ligar a todas las cuentas: " + TempData["Error"] + " Complétalo en la pestaña Cuentas.";
+                    return ExitoFormulario(Url.Action("Detalle", new { id }) + "#cuentas");
+                }
+            }
+            Ejecutar(() => { }, mensaje);   // aviso de exito (+ nota de replicacion pendiente si la hay)
+
+            string destino = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action("Detalle", new { id });
+            return ExitoFormulario(destino);
         }
 
         public ActionResult Editar(int id)
@@ -173,10 +209,20 @@ namespace EP360_Logistics_Admin.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult VincularCuenta(int idPersona, int? idCuenta, string categoria, string puestoEnCuenta)
+        public ActionResult VincularCuenta(int idPersona, int[] idCuentas, int? idGrupoCuenta, string categoria, string puestoEnCuenta)
         {
-            if (idCuenta == null) TempData["Error"] = "Elige una cuenta.";
-            else Ejecutar(() => _servicio.Vincular(idPersona, idCuenta.Value, categoria, puestoEnCuenta), "Cuenta vinculada.");
+            if ((idCuentas == null || idCuentas.Length == 0) && idGrupoCuenta == null) TempData["Error"] = "Elige al menos una cuenta o un grupo.";
+            else
+            {
+                var ligadas = new List<int>();
+                if (Ejecutar(() => { ligadas = _servicio.VincularVarias(idPersona, idCuentas, idGrupoCuenta, categoria, puestoEnCuenta); }, null))
+                {
+                    string mensaje = ligadas.Count == 0
+                        ? "Ya era contacto de todas esas cuentas; no hubo cambios."
+                        : "Ligada a " + ligadas.Count + (ligadas.Count == 1 ? " cuenta." : " cuentas.");
+                    Ejecutar(() => { }, mensaje);
+                }
+            }
             return Redirect(Url.Action("Detalle", new { id = idPersona }) + "#cuentas");
         }
 
@@ -191,6 +237,12 @@ namespace EP360_Logistics_Admin.Controllers
         {
             ViewBag.Departamentos = _catalogos.Departamentos(modelo.IdDepartamento);
             ViewBag.Sucursales = _catalogos.Sucursales(modelo.IdSucursal);
+            if (modelo.IdPersona == 0)
+            {
+                // A que cliente se liga al crearla: cuentas sueltas y/o todas las de un grupo.
+                ViewBag.CuentasLigables = _catalogos.Cuentas();
+                ViewBag.GruposLigables = _catalogos.Grupos((int?)ViewBag.IdGrupoSel);
+            }
             return VistaFormulario("Form", "_Modal", modelo);
         }
     }

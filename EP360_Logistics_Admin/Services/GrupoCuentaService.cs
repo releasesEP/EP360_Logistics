@@ -38,10 +38,38 @@ namespace EP360_Logistics_Admin.Services
             return _cuentaDal.Listar(false, null, null).Where(c => !c.IdGrupoCuenta.HasValue).OrderBy(c => c.NombreComercial).ToList();
         }
 
-        // Contactos distintos entre las cuentas activas del grupo (los grupos tienen pocas cuentas).
-        public int ContactosDelGrupo(IEnumerable<CuentaModel> cuentas)
+        // Contactos distintos entre las cuentas activas del grupo (los grupos tienen pocas cuentas), cada uno con
+        // las cuentas donde esta ligado y las cuentas activas del grupo donde todavia no lo esta.
+        public List<GrupoContactoModel> ContactosDelGrupo(IEnumerable<CuentaModel> cuentas)
         {
-            return cuentas.Where(c => c.Activo).SelectMany(c => _personaDal.PersonasDeCuenta(c.IdCuenta)).Select(p => p.IdPersona).Distinct().Count();
+            var activas = cuentas.Where(c => c.Activo).ToList();
+            var vinculos = new List<PersonaCuentaModel>();
+            foreach (var c in activas)
+                foreach (var v in _personaDal.PersonasDeCuenta(c.IdCuenta))
+                {
+                    v.Cuenta = c.NombreComercial;
+                    vinculos.Add(v);
+                }
+
+            return vinculos
+                .GroupBy(v => v.IdPersona)
+                .Select(g =>
+                {
+                    var primero = g.First();
+                    var ligadas = g.Select(v => v.IdCuenta).ToList();
+                    return new GrupoContactoModel
+                    {
+                        IdPersona = g.Key,
+                        NombrePersona = primero.NombrePersona,
+                        TipoPersona = primero.TipoPersona,
+                        Correo = primero.Correo,
+                        Telefono = primero.Telefono,
+                        Vinculos = g.OrderBy(v => v.Cuenta).ToList(),
+                        Faltantes = activas.Where(c => !ligadas.Contains(c.IdCuenta)).ToList()
+                    };
+                })
+                .OrderBy(c => c.NombrePersona)
+                .ToList();
         }
     }
 }

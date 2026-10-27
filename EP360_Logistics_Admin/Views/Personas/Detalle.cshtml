@@ -197,24 +197,17 @@
             @if (Model.Activo)
             {
                 <div class="tarjeta-ep-pie">
-                    @using (Html.BeginForm("VincularCuenta", "Personas", FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+                    @using (Html.BeginForm("VincularCuenta", "Personas", FormMethod.Post))
                     {
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="idPersona" value="@Model.IdPersona" />
-                        <div class="col-md-5">
-                            <label class="form-label small fw-bold texto-secundario mb-1">Ligar a una cuenta</label>
-                            @Html.DropDownList("idCuenta", vinculables, "Elige una cuenta…", new { @class = "form-select" })
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" name="categoria" class="form-control" placeholder="Categoría (ej. Ventas)" maxlength="30" />
-                        </div>
-                        <div class="col-md-2">
-                            <input type="text" name="puestoEnCuenta" class="form-control" placeholder="Puesto" maxlength="120" />
-                        </div>
-                        <div class="col-md-2 d-grid">
+                        @{ ViewBag.CuentasLigables = vinculables; }
+                        @Html.Partial("_VinculoCuentas")
+                        <div class="mt-3 d-flex justify-content-end">
                             <button type="submit" class="btn-corporativo"><i class="fas fa-link"></i> Ligar</button>
                         </div>
                     }
+                    <p class="ayuda-campo mt-2 mb-0">Solo aparecen las cuentas donde todavía no es contacto. Al elegir un grupo se saltan las cuentas donde ya lo es, sin cambiar su categoría ni su puesto.</p>
                 </div>
             }
         </div>
