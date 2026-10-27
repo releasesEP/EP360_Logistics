@@ -16,6 +16,8 @@
         <div>
             <h3><i class="fas fa-rotate"></i>Sincronización con Active Directory</h3>
             <p>Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+            @{ var horaAutomatica = EP360_Logistics_Admin.Services.SincronizacionProgramada.Hora; }
+            <p><i class="fas fa-clock"></i> @(horaAutomatica.HasValue ? "Se sincroniza sola todos los días a las " + horaAutomatica.Value.ToString(@"hh\:mm") + "." : "La sincronización automática está apagada en este servidor.")</p>
         </div>
     </div>
     <div class="encabezado-acciones">

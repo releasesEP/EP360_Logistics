@@ -167,6 +167,37 @@ jobs:
           robocopy "descargado" "${{ vars.RUTA_SITIO_IIS }}" /MIR /XD "App_Data" /XF "ConnectionStrings.config" "AppSettings.config" "errores.log" /R:3 /W:5
           if %ERRORLEVEL% GEQ 8 (exit /b 1) else (exit /b 0)
 
+      # La sincronizacion con AD de las 03:00 y los reintentos del Replicador viven en temporizadores dentro de la app:
+      # si IIS la duerme por inactividad nunca disparan. AlwaysRunning + sin idle timeout + preload la mantienen arriba
+      # (tambien despues de cada reciclaje). Si algo falla solo avisa: no detiene el despliegue.
+      - name: Mantener la app siempre despierta (IIS)
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          $pool = "${{ vars.NOMBRE_APP_POOL }}"
+          $ruta = "${{ vars.RUTA_SITIO_IIS }}".TrimEnd("\")
+          try {
+            Set-ItemProperty "IIS:\AppPools\$pool" -Name startMode -Value AlwaysRunning
+            Set-ItemProperty "IIS:\AppPools\$pool" -Name processModel.idleTimeout -Value ([TimeSpan]::Zero)
+            Write-Output "Pool $pool en AlwaysRunning y sin idle timeout."
+            $sitio = Get-Website | Where-Object { [Environment]::ExpandEnvironmentVariables($_.physicalPath).TrimEnd("\") -eq $ruta }
+            if ($sitio) {
+              Set-ItemProperty "IIS:\Sites\$($sitio.name)" -Name applicationDefaults.preloadEnabled -Value $true
+              Write-Output "Preload activado en el sitio $($sitio.name)."
+            } else {
+              $app = Get-WebApplication | Where-Object { [Environment]::ExpandEnvironmentVariables($_.PhysicalPath).TrimEnd("\") -eq $ruta }
+              if ($app) {
+                $nombreSitio = $app.GetParentElement().Attributes["name"].Value
+                Set-ItemProperty "IIS:\Sites\$nombreSitio$($app.path)" -Name preloadEnabled -Value $true
+                Write-Output "Preload activado en la aplicacion $nombreSitio$($app.path)."
+              } else {
+                Write-Warning "No se encontro el sitio con la ruta $ruta; preload sin activar."
+              }
+            }
+          } catch {
+            Write-Warning "No se pudo ajustar IIS para mantener la app despierta: $_"
+          }
+
       - name: Reciclar el application pool
         shell: powershell
         run: |
