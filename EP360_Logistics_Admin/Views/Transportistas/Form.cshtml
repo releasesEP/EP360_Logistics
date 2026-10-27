@@ -1,0 +1,60 @@
+@model EP360_Logistics_Admin.Models.TransportistaModel
+@{
+    bool esNuevo = Model.IdTransportista == 0;
+    ViewBag.Title = esNuevo ? "Nuevo transportista" : "Editar transportista";
+    string urlVolver = esNuevo ? Url.Action("Index") : Url.Action("Detalle", new { id = Model.IdTransportista });
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@urlVolver" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-truck-fast"></i>@ViewBag.Title</h3>
+            <p>@(esNuevo ? "El folio se genera automáticamente." : "Folio " + Model.Folio)</p>
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.IdTransportista)
+    <div class="form-ep">
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Identificación</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Nombre)
+                        @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. WARHORSE" })
+                        @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+                        <div class="form-text">Nombre corto como se le conoce; se guarda en mayúsculas.</div>
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Rfc)
+                        @Html.TextBoxFor(m => m.Rfc, new { @class = "form-control" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(m => m.RazonSocial)
+                        @Html.TextBoxFor(m => m.RazonSocial, new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">2</span> Relación con el directorio</div>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.IdCuenta)
+                        @Html.DropDownListFor(m => m.IdCuenta, (IEnumerable<SelectListItem>)ViewBag.Cuentas, "(no es cuenta del directorio)", new { @class = "form-select" })
+                        <div class="form-text">Solo si el transportista también es cliente de EP.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@urlVolver">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    </div>
+}

@@ -1,0 +1,11 @@
+@model EP360_Logistics_Admin.Models.EncabezadoListado
+@* Pestanas de estado del listado, con cuantos hay en cada una (con los demas filtros puestos). *@
+<nav class="listado-pestanas" aria-label="Estados">
+    @foreach (var p in Model.Pestanas)
+    {
+        var cambio = new System.Collections.Generic.Dictionary<string, object> { { Model.ParametroPestana, p.Clave } };
+        <a href="@Url.ConFiltros(cambio)" class="listado-pestana @(p.Color != null ? "color-" + p.Color : "") @(Model.PestanaActiva == p.Clave ? "activo" : "")">
+            <i class="fas @p.Icono"></i><span>@p.Texto</span><b>@p.Conteo.ToString("N0")</b>
+        </a>
+    }
+</nav>

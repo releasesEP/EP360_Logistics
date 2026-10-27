@@ -18,6 +18,8 @@ namespace EP360_Logistics_Admin.Services
             return _dal.Listar(tipoPersona, incluirInactivos, buscar);
         }
 
+        public List<PersonaModel> ListarTodas() { return _dal.ListarTodas(); }
+
         // Personas que se pueden vincular como contacto de una cuenta (todo menos usuarios de AD).
         public List<PersonaModel> ListarVinculables()
         {
@@ -49,6 +51,23 @@ namespace EP360_Logistics_Admin.Services
 
         public void Vincular(int idPersona, int idCuenta, string categoria, string puesto) { _dal.Vincular(idPersona, idCuenta, categoria, puesto); }
         public void Desvincular(int idPersona, int idCuenta) { _dal.Desvincular(idPersona, idCuenta); }
+
+        // Liga a la persona a varias cuentas de una vez: las elegidas una por una mas todas las cuentas activas del
+        // grupo elegido (foto del momento: las cuentas que se agreguen despues al grupo no se ligan solas).
+        // Devuelve las cuentas a las que quedo ligada.
+        public List<int> VincularVarias(int idPersona, IEnumerable<int> idCuentas, int? idGrupoCuenta, string categoria, string puesto)
+        {
+            var destino = new List<int>(idCuentas ?? new int[0]);
+            if (idGrupoCuenta.HasValue)
+                destino.AddRange(new CuentaDAL().Listar(false, idGrupoCuenta, null).Select(c => c.IdCuenta));
+            // Las cuentas donde ya es contacto se saltan: sp_VincularPersonaCuenta sobrescribiria su categoria y puesto.
+            var yaLigadas = _dal.CuentasDePersona(idPersona).Select(c => c.IdCuenta).ToList();
+            destino = destino.Distinct().Where(id => !yaLigadas.Contains(id)).ToList();
+
+            // Si una falla, las anteriores ya quedaron ligadas; volver a intentar solo completa las que faltan.
+            foreach (var idCuenta in destino) _dal.Vincular(idPersona, idCuenta, categoria, puesto);
+            return destino;
+        }
 
         private static void Normalizar(PersonaModel m)
         {

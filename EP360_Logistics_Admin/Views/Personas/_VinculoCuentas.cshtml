@@ -1,0 +1,41 @@
+@* A que cliente se liga la persona: cuentas sueltas y/o todas las cuentas activas de un grupo.
+   Lo usan el alta de persona (formulario y modal) y la pestana Cuentas del detalle.
+   Campos que envia: idCuentas (varios), idGrupoCuenta, categoria, puestoEnCuenta.
+   Lee de ViewBag: CuentasLigables, GruposLigables, IdCuentasSel (int[]). *@
+@{
+    var cuentasLigables = (IEnumerable<SelectListItem>)ViewBag.CuentasLigables ?? new List<SelectListItem>();
+    var gruposLigables = (IEnumerable<SelectListItem>)ViewBag.GruposLigables ?? new List<SelectListItem>();
+    var seleccionadas = (int[])ViewBag.IdCuentasSel ?? new int[0];
+}
+<div class="row g-3">
+    <div class="col-md-7">
+        <label class="form-label">Cuentas del cliente</label>
+        <div class="border rounded p-2" style="max-height:190px;overflow:auto;">
+            @if (!cuentasLigables.Any())
+            {
+                <span class="texto-tenue small">No hay cuentas disponibles.</span>
+            }
+            @foreach (var c in cuentasLigables)
+            {
+                <label class="d-flex align-items-center gap-2 py-1 mb-0" style="font-weight:normal;cursor:pointer;">
+                    <input type="checkbox" name="idCuentas" value="@c.Value" @(seleccionadas.Contains(int.Parse(c.Value)) ? "checked" : "") />
+                    <span>@c.Text</span>
+                </label>
+            }
+        </div>
+        <span class="ayuda-campo d-block mt-1">Marca las cuentas de las que es contacto.</span>
+    </div>
+    <div class="col-md-5">
+        <label class="form-label">…o todas las cuentas de un grupo</label>
+        @Html.DropDownList("idGrupoCuenta", gruposLigables, "(ningún grupo)", new { @class = "form-select" })
+        <span class="ayuda-campo d-block mt-1">Se liga a las cuentas activas que tiene hoy. Las que se agreguen después al grupo hay que ligarlas aparte. Puedes combinar con las cuentas marcadas.</span>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Categoría</label>
+        <input type="text" name="categoria" class="form-control" placeholder="Ej. Ventas" maxlength="30" />
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Puesto en la cuenta</label>
+        <input type="text" name="puestoEnCuenta" class="form-control" maxlength="120" />
+    </div>
+</div>

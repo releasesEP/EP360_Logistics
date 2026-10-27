@@ -1,0 +1,50 @@
+@model EP360_Logistics_Admin.Models.ChoferModel
+@{ bool esNuevo = Model.IdChofer == 0; }
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNuevo ? "Crear" : "Editar", "Choferes", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdChofer)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas fa-id-card"></i></span>
+                <span>@(esNuevo ? "Nuevo chofer" : "Editar chofer")<small>@(esNuevo ? "La licencia no se puede repetir entre choferes activos." : Model.NombreCompleto)</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+            <div class="row g-3">
+                <div class="col-12">
+                    @Html.LabelFor(m => m.NombreCompleto)
+                    @Html.TextBoxFor(m => m.NombreCompleto, new { @class = "form-control", autofocus = "autofocus" })
+                    @Html.ValidationMessageFor(m => m.NombreCompleto, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Licencia)
+                    @Html.TextBoxFor(m => m.Licencia, new { @class = "form-control", placeholder = "Ej. CHIH222863" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Telefono)
+                    @Html.TextBoxFor(m => m.Telefono, new { @class = "form-control" })
+                </div>
+                @if (esNuevo)
+                {
+                    <div class="col-12">
+                        @Html.LabelFor(m => m.IdTransportista)
+                        @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "(ligar después)", new { @class = "form-select" })
+                        <span class="ayuda-campo d-block mt-1">Más transportistas se ligan desde la ficha del chofer.</span>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNuevo ? "Crear chofer" : "Guardar")</button>
+        </div>
+    }
+</div>

@@ -62,6 +62,12 @@ namespace EP360_Logistics_Admin.DAL
                 P("@buscar", string.IsNullOrWhiteSpace(buscar) ? null : buscar.Trim()));
         }
 
+        // Todas (activas e inactivas, sin el tope de 500 del SP): el listado filtra y pagina en memoria.
+        public List<PersonaModel> ListarTodas()
+        {
+            return Lista("dir.sp_ObtenerPersonas", MapaLista, P("@incluirInactivos", true), P("@maximo", 100000));
+        }
+
         public PersonaModel ObtenerPorId(int id)
         {
             return Uno("dir.sp_ObtenerPersonaPorId", MapaDetalle, P("@idPersona", id));

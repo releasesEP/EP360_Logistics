@@ -2,12 +2,16 @@
     ViewBag.Title = "Sin acceso";
 }
 
-<section class="tarjeta">
-    <div class="tarjeta-encabezado">
-        <span class="icono-material" aria-hidden="true">lock</span>
-        <h2>Sin acceso</h2>
-        <span class="insignia insignia-error">403</span>
+<div class="d-flex justify-content-center py-5">
+    <div class="modal-alerta" style="max-width:480px;width:100%;">
+        <div class="modal-alerta__contenido">
+            <div class="marca-sello marca-sello--peligro">
+                <span class="marca-sello-logo">EP<span class="marca-sello-acento">360</span></span>
+                <span class="marca-sello-badge"><span class="marca-sello-badge-anillo"><span class="marca-sello-badge-circulo"><i class="fas fa-lock"></i></span></span></span>
+            </div>
+            <span class="modal-alerta__etiqueta modal-alerta__etiqueta--peligro">Sin acceso · 403</span>
+            <p class="modal-alerta__mensaje">Tu cuenta no pertenece al grupo de administradores del directorio global.</p>
+            <p class="modal-alerta__cuerpo">Entraste como <strong>@User.Identity.Name</strong>. Si necesitas acceso, solicítalo al departamento de Sistemas.</p>
+        </div>
     </div>
-    <p>Tu cuenta (<strong>@User.Identity.Name</strong>) no pertenece al grupo de administradores del directorio global.</p>
-    <p>Si necesitas acceso, solicítalo al departamento de Sistemas.</p>
-</section>
+</div>

@@ -1,0 +1,40 @@
+name: CI - Verificar build
+
+# Corre en cada Pull Request hacia dev o prod: compila el proyecto y valida las vistas Razor
+# con aspnet_compiler, para que un error (C# o .cshtml) se detecte antes de mezclar.
+# Ojo: las vistas se compilan como C# 5 (no hay Roslyn en Web.config) -> nada de `?.` en .cshtml.
+on:
+  pull_request:
+    branches: [ dev, prod ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # ConnectionStrings.config / AppSettings.config no estan en git (son secretos). Web.config los
+      # referencia con configSource, asi que se copian los .example (relleno) solo para que compile.
+      # Esto NO conecta a ninguna base de datos.
+      - name: Crear configs con relleno (solo para compilar)
+        shell: pwsh
+        run: |
+          $p = "EP360_Logistics_Admin"
+          Copy-Item "$p/ConnectionStrings.config.example" "$p/ConnectionStrings.config"
+          Copy-Item "$p/AppSettings.config.example" "$p/AppSettings.config"
+
+      # El proyecto usa PackageReference (RestoreProjectStyle), por eso /restore y no nuget restore.
+      - name: Compilar (Release)
+        run: msbuild EP360_Logistics_Admin/EP360_Logistics_Admin.csproj /restore /p:Configuration=Release /nologo /v:minimal
+
+      - name: Validar vistas Razor (aspnet_compiler)
+        shell: pwsh
+        run: |
+          $compilador = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe"
+          & $compilador -v / -p "EP360_Logistics_Admin" "$env:RUNNER_TEMP\vistas_compiladas"
+          if ($LASTEXITCODE -ne 0) { throw "aspnet_compiler encontro errores en las vistas." }

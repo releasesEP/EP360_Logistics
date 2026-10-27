@@ -58,6 +58,12 @@ namespace EP360_Logistics_Admin.DAL
                 P("@idGrupoCuenta", m.IdGrupoCuenta), P("@idCiudad", m.IdCiudad), P("@idSucursal", m.IdSucursal));
         }
 
+        // idGrupoCuenta NULL deja la cuenta sin grupo.
+        public void AsignarGrupo(int idCuenta, int? idGrupoCuenta)
+        {
+            Ejecutar("dir.sp_AsignarGrupoCuenta", P("@idCuenta", idCuenta), P("@idGrupoCuenta", idGrupoCuenta));
+        }
+
         public void Desactivar(int id) { Ejecutar("dir.sp_DesactivarCuenta", P("@idCuenta", id)); }
         public void Reactivar(int id) { Ejecutar("dir.sp_ReactivarCuenta", P("@idCuenta", id)); }
     }

@@ -1,0 +1,61 @@
+@model EP360_Logistics_Admin.Models.CuentaModel
+@{ bool esNueva = Model.IdCuenta == 0; }
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNueva ? "Crear" : "Editar", "Cuentas", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdCuenta)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas fa-building"></i></span>
+                <span>@(esNueva ? "Nueva cuenta" : "Editar cuenta")<small>@(esNueva ? "El folio se genera automáticamente al guardar." : Model.NombreComercial + " · Folio " + Model.Folio)</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+            <div class="row g-3">
+                <div class="col-md-8">
+                    @Html.LabelFor(m => m.NombreComercial)
+                    @Html.TextBoxFor(m => m.NombreComercial, new { @class = "form-control", autofocus = "autofocus" })
+                    @Html.ValidationMessageFor(m => m.NombreComercial, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.CodigoCuenta)
+                    @Html.TextBoxFor(m => m.CodigoCuenta, new { @class = "form-control" })
+                </div>
+                <div class="col-md-8">
+                    @Html.LabelFor(m => m.RazonSocial)
+                    @Html.TextBoxFor(m => m.RazonSocial, new { @class = "form-control" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Rfc)
+                    @Html.TextBoxFor(m => m.Rfc, new { @class = "form-control", maxlength = "20" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.IdGrupoCuenta)
+                    @Html.DropDownListFor(m => m.IdGrupoCuenta, (IEnumerable<SelectListItem>)ViewBag.Grupos, "(sin grupo)", new { @class = "form-select" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.IdCiudad)
+                    @Html.DropDownListFor(m => m.IdCiudad, (IEnumerable<SelectListItem>)ViewBag.Ciudades, "(sin ciudad)", new { @class = "form-select" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.IdSucursal)
+                    @Html.DropDownListFor(m => m.IdSucursal, (IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "form-select" })
+                </div>
+                <div class="col-12">
+                    <span class="ayuda-campo">El grupo reúne varias cuentas de un mismo cliente; las cajas de cliente normalmente se ligan al grupo.</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNueva ? "Crear cuenta" : "Guardar")</button>
+        </div>
+    }
+</div>

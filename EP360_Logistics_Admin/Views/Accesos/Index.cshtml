@@ -1,0 +1,207 @@
+@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.AccesoPersonaModel>
+@using EP360_Logistics_Admin.Services
+@{
+    ViewBag.Title = "Accesos a portales";
+    var portales = (System.Collections.Generic.List<PortalModel>)ViewBag.Portales;
+    var conteos = (System.Collections.Generic.Dictionary<int, int>)ViewBag.ConteoPorPortal;
+    var portalMasivo = (PortalModel)ViewBag.PortalMasivo;
+    int elegibles = (int)ViewBag.ElegiblesMasivo;
+    string buscar = ViewBag.Buscar, tipo = ViewBag.Tipo, acceso = ViewBag.Acceso;
+    int? idPortal = (int?)ViewBag.IdPortal;
+    string volver = Request.RawUrl;
+    Func<string, string> icono = clave => clave == "EP360" ? "fa-route" : clave == "BALANCE" ? "fa-scale-balanced" : clave == "HELPDESK" ? "fa-headset" : clave == "INTRANET" ? "fa-building-user" : "fa-window-maximize";
+    string[] colores = { "#0b1b3d", "#16a34a", "#d97706", "#7c3aed", "#1d4ed8" };
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-key"></i>Accesos a portales</h3>
+            <p>Aquí se decide quién entra a cada portal. Dentro de cada portal solo se asignan los permisos por módulo de quien ya tiene acceso.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    @for (int i = 0; i < portales.Count; i++)
+    {
+        var portal = portales[i];
+        <div class="col-6 col-lg">
+            <a class="kpi-tile" href="@Url.Action("Index", new { idPortal = portal.IdPortal, acceso = "con" })">
+                <div class="kpi-tile-icono" style="--kpi-color:@colores[i % colores.Length];"><i class="fas @icono(portal.Clave)"></i></div>
+                <div class="kpi-tile-etiqueta">@portal.Nombre</div>
+                <div class="kpi-tile-valor">@conteos[portal.IdPortal].ToString("N0")</div>
+                <span class="kpi-tile-detalle">@(portal.PermiteExternos ? "personas con acceso · público" : "personas con acceso · interno")</span>
+            </a>
+        </div>
+    }
+    <div class="col-6 col-lg">
+        <a class="kpi-tile" href="@Url.Action("Index", new { acceso = "sin" })">
+            <div class="kpi-tile-icono" style="--kpi-color:#dc2626;"><i class="fas fa-user-lock"></i></div>
+            <div class="kpi-tile-etiqueta">Sin ningún acceso</div>
+            <div class="kpi-tile-valor">@(((int)ViewBag.SinAcceso).ToString("N0"))</div>
+            <span class="kpi-tile-detalle">de @(((int)ViewBag.TotalPersonas).ToString("N0")) personas activas</span>
+        </a>
+    </div>
+</div>
+
+<div class="listado-filtros">
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@buscar" autocomplete="off" placeholder="Buscar por nombre, correo, usuario, puesto, departamento o cuenta..." @(string.IsNullOrEmpty(buscar) ? "" : "autofocus") />
+        </div>
+        <select name="tipo" class="form-select form-select-sm" aria-label="Tipo">
+            <option value="">Todos los tipos</option>
+            <option value="AD" @(tipo == "AD" ? "selected" : "")>Usuarios de AD</option>
+            <option value="Externo" @(tipo == "Externo" ? "selected" : "")>Usuarios externos</option>
+        </select>
+        <select name="idPortal" class="form-select form-select-sm" aria-label="Portal">
+            <option value="">Todos los portales</option>
+            @foreach (var portal in portales)
+            {
+                <option value="@portal.IdPortal" @(idPortal == portal.IdPortal ? "selected" : "")>@portal.Nombre</option>
+            }
+        </select>
+        <select name="acceso" class="form-select form-select-sm" aria-label="Acceso">
+            <option value="">Con o sin acceso</option>
+            <option value="con" @(acceso == "con" ? "selected" : "")>Con acceso</option>
+            <option value="sin" @(acceso == "sin" ? "selected" : "")>Sin acceso</option>
+        </select>
+    </form>
+    <div class="listado-total"><b>@Model.Total.ToString("N0")</b> @(Model.Total == 1 ? "persona" : "personas")</div>
+</div>
+
+@if (portalMasivo != null && elegibles > 0)
+{
+    <div class="tarjeta-ep mb-3">
+        <div class="tarjeta-ep-cuerpo d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <span><i class="fas fa-users-gear me-2"></i>Con este filtro hay <b>@elegibles.ToString("N0")</b> @(elegibles == 1 ? "persona" : "personas") sin acceso a <b>@portalMasivo.Nombre</b>.</span>
+            @using (Html.BeginForm("OtorgarAFiltrados", "Accesos", FormMethod.Post, new
+            {
+                data_confirmar = "¿Dar acceso a " + elegibles + (elegibles == 1 ? " persona" : " personas") + " a " + portalMasivo.Nombre + "?",
+                data_confirmar_detalle = "Se le da acceso a todas las personas que se ven con el filtro actual y aún no lo tienen. Después puedes quitarlo una por una.",
+                data_confirmar_tipo = "normal",
+                data_confirmar_boton = "Sí, dar acceso"
+            }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idPortal" value="@portalMasivo.IdPortal" />
+                <input type="hidden" name="buscar" value="@buscar" />
+                <input type="hidden" name="tipo" value="@tipo" />
+                <input type="hidden" name="acceso" value="@acceso" />
+                <input type="hidden" name="returnUrl" value="@volver" />
+                <button type="submit" class="btn-corporativo"><i class="fas fa-user-check"></i> Dar acceso a todas las que se ven</button>
+            }
+        </div>
+    </div>
+}
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-user-slash"></i></div>
+            <h6>No hay personas con esos filtros</h6>
+            <p>Prueba con otra búsqueda o quita algún filtro.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        <th>Persona</th>
+                        <th>Tipo</th>
+                        <th>Departamento o cuenta</th>
+                        @foreach (var portal in portales)
+                        {
+                            <th class="celda-portal" title="@portal.Nombre">@portal.Clave</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep @(p.TipoPersona == "Externo" ? "av-morado" : "")">@TextoUtil.Iniciales(p.NombreCompleto)</span>
+                                    <div style="min-width:0;">
+                                        <a class="nombre" href="@Url.Action("Detalle", "Personas", new { id = p.IdPersona })">@p.NombreCompleto</a>
+                                        <span class="sub">@(p.Correo ?? (p.SamAccountName != null ? "@" + p.SamAccountName : "Sin correo"))</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @if (p.TipoPersona == "AD")
+                                {
+                                    <span class="pastilla pastilla-azul"><i class="fab fa-windows"></i>AD</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-morado"><i class="fas fa-key"></i>Externo</span>
+                                }
+                            </td>
+                            <td>
+                                @if (p.TipoPersona == "AD")
+                                {
+                                    <span class="d-block fw-semibold">@(p.Puesto ?? "—")</span>
+                                    <span class="texto-tenue small">@(p.Departamento ?? "Sin departamento")</span>
+                                }
+                                else
+                                {
+                                    <span class="d-block fw-semibold">@(p.Cuenta ?? "Sin cuenta vinculada")</span>
+                                }
+                            </td>
+                            @foreach (var portal in portales)
+                            {
+                                bool tiene = p.Portales.Contains(portal.IdPortal);
+                                <td class="celda-portal">
+                                    @if (!AccesoPortalService.PuedeEntrar(p, portal))
+                                    {
+                                        <span class="texto-tenue small" title="Portal interno: un usuario externo no puede entrar">No aplica</span>
+                                    }
+                                    else if (tiene)
+                                    {
+                                        using (Html.BeginForm("Revocar", "Accesos", FormMethod.Post, new
+                                        {
+                                            data_confirmar = "¿Quitar a " + p.NombreCompleto + " el acceso a " + portal.Nombre + "?",
+                                            data_confirmar_detalle = "Dejará de poder entrar a ese portal. Puedes volver a darle acceso cuando quieras.",
+                                            data_confirmar_boton = "Sí, quitar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                                            <input type="hidden" name="idPortal" value="@portal.IdPortal" />
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="btn-acceso btn-acceso-si" title="Tiene acceso a @portal.Nombre. Clic para quitarlo."><i class="fas fa-check"></i> Sí</button>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        using (Html.BeginForm("Otorgar", "Accesos", FormMethod.Post))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="idPersona" value="@p.IdPersona" />
+                                            <input type="hidden" name="idPortal" value="@portal.IdPortal" />
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="btn-acceso btn-acceso-no" title="No tiene acceso a @portal.Nombre. Clic para darlo."><i class="fas fa-plus"></i> Dar</button>
+                                        }
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model, new ViewDataDictionary { { "SinExportar", true } })

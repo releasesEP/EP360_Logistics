@@ -1,0 +1,166 @@
+@{
+    ViewBag.Title = "Novedades del sistema";
+}
+@* Versionamiento, como Views/Home/Novedades.cshtml de HelpDesk. Al publicar una version nueva: agregar su bloque
+   arriba (con "version-actual"), quitarle esa etiqueta a la anterior y subir el numero en la pastilla del pie
+   (Views/Shared/_Layout.cshtml). Colores de los iconos: solo la paleta (navy, #0f4c9e, #1d6fd1, verde, ambar, rojo, pizarra). *@
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-rocket"></i>Novedades del sistema</h3>
+            <p>Lo que cambió en cada versión de la administración del directorio global y la flota.</p>
+        </div>
+    </div>
+</div>
+
+<div class="novedades">
+
+    <section class="version-bloque">
+        <div class="version-tarjeta">
+            <div class="version-cabecera">
+                <span class="version-pill"><i class="fas fa-code-branch"></i> v1.3.0</span>
+                <h5 class="version-titulo">Menú desplegable, modales y paleta de HelpDesk</h5>
+                <span class="version-actual">Versión actual</span>
+                <div class="version-meta"><span><i class="far fa-calendar"></i> 6 de octubre, 2026</span><span><i class="fas fa-user"></i> Kevin Aparicio</span></div>
+            </div>
+            <div class="version-cuerpo">
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#0b1b3d;"><i class="fas fa-bars"></i></div>
+                    <div>
+                        <h6>Menú que se despliega desde la marca <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Al darle clic a «EP360 Logistics» se abre un panel con todas las secciones (Directorio, Flota y Sistema), con su descripción y la página actual marcada. La hamburguesa se vuelve una ✕; se cierra tocando fuera o con Esc, y la tecla M lo abre y lo cierra.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#1d6fd1;"><i class="fas fa-window-restore"></i></div>
+                    <div>
+                        <h6>Altas y ediciones en ventanas emergentes <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Personas, cuentas, grupos, cajas, transportistas, tractores y choferes se crean y editan sin salir de la pantalla. Si algo falta o la base lo rechaza (un nombre o una licencia repetidos), el aviso aparece en la misma ventana y no se pierde lo capturado.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#0f4c9e;"><i class="fas fa-chart-simple"></i></div>
+                    <div>
+                        <h6>Indicadores en una sola barra <span class="etiqueta-cambio mejora">Mejora</span></h6>
+                        <p>Los números de arriba de cada pantalla ya no son tarjetas sueltas: van en una barra continua, cada uno con su ícono. Se siguen pudiendo pulsar para filtrar.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#16a34a;"><i class="fas fa-palette"></i></div>
+                    <div>
+                        <h6>Mismos colores que HelpDesk <span class="etiqueta-cambio mejora">Mejora</span></h6>
+                        <p>Toda la administración usa la paleta de HelpDesk: los azules del portal, verde, ámbar y rojo para estados y avisos, y grises pizarra. Las ventanas ya no tienen la forma de boleto y el modo oscuro vive en el pie.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#d97706;"><i class="fas fa-rocket"></i></div>
+                    <div>
+                        <h6>Esta página de novedades <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>La versión del pie de página abre esta lista de cambios, igual que en HelpDesk.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="version-bloque">
+        <div class="version-tarjeta">
+            <div class="version-cabecera">
+                <span class="version-pill"><i class="fas fa-code-branch"></i> v1.2.0</span>
+                <h5 class="version-titulo">Copia de la base en el servidor 11</h5>
+                <div class="version-meta"><span><i class="far fa-calendar"></i> 6 de octubre, 2026</span><span><i class="fas fa-user"></i> Magdalena</span></div>
+            </div>
+            <div class="version-cuerpo">
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#0b1b3d;"><i class="fas fa-database"></i></div>
+                    <div>
+                        <h6>Escritura en el 60 y repetición en el 11 <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Cada cambio se guarda en el servidor 60 (maestro) y se repite en el 11, en el mismo orden, con una cola de reintentos y detección de diferencias. Una escritura en el 60 nunca falla por culpa del 11.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#1d6fd1;"><i class="fas fa-code-compare"></i></div>
+                    <div>
+                        <h6>Pantalla «Copia en el 11» <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Resumen con explicación y pasos, comparación por tabla con diagnóstico, detalle de cada operación, omitir, alinear contadores de ids, historial y una alerta en el menú cuando algo necesita revisión.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="version-bloque">
+        <div class="version-tarjeta">
+            <div class="version-cabecera">
+                <span class="version-pill"><i class="fas fa-code-branch"></i> v1.1.0</span>
+                <h5 class="version-titulo">Flota y rediseño de la administración</h5>
+                <div class="version-meta"><span><i class="far fa-calendar"></i> 6 de octubre, 2026</span><span><i class="fas fa-user"></i> Kevin Aparicio</span></div>
+            </div>
+            <div class="version-cuerpo">
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#0b1b3d;"><i class="fas fa-trailer"></i></div>
+                    <div>
+                        <h6>Cajas, transportistas, tractores y choferes <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Nuevo esquema de flota en la base global. Las cajas de cliente se ligan a un grupo de cuentas (o a una cuenta), con su transportista habitual; también hay cajas de transportista y propias de EP. Se cargaron las cajas exclusivas de cada cliente, los transportistas, tractores y choferes que venían del sistema de Transporte.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#1d6fd1;"><i class="fas fa-shuffle"></i></div>
+                    <div>
+                        <h6>Un chofer puede trabajar con varios transportistas <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Cada chofer guarda su historial de transportistas (desde, hasta y si sigue activo) y se liga o se quita desde su ficha o la del transportista. El tractor se queda con un solo transportista: el económico es su número interno.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#0f4c9e;"><i class="fas fa-filter"></i></div>
+                    <div>
+                        <h6>Listados con filtros, orden y exportar <span class="etiqueta-cambio mejora">Mejora</span></h6>
+                        <p>Pestañas de estado con su conteo, búsqueda que se aplica sola, filtros que se quitan con su «x», orden por columna, paginación y descarga a CSV de todo lo filtrado. Las acciones de cada fila piden confirmación y avisan el resultado con el sello de EP360.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#16a34a;"><i class="fas fa-id-badge"></i></div>
+                    <div>
+                        <h6>Fichas tipo perfil y detalle de grupo y de caja <span class="etiqueta-cambio nuevo">Nuevo</span></h6>
+                        <p>Cada persona, cuenta, grupo, caja, transportista y chofer tiene su ficha con pestañas. Desde el grupo se agregan o quitan cuentas, y el inicio se volvió un tablero con los números de todo el directorio y la flota.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#d97706;"><i class="fas fa-ban"></i></div>
+                    <div>
+                        <h6>Desactivar un grupo o una cuenta da de baja sus cajas <span class="etiqueta-cambio arreglo">Arreglo</span></h6>
+                        <p>Antes una caja podía quedar ligada a un grupo o una cuenta ya inactivos. Ahora se dan de baja junto con su dueño.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="version-bloque base">
+        <div class="version-tarjeta">
+            <div class="version-cabecera">
+                <span class="version-pill base"><i class="fas fa-flag"></i> v1.0.0</span>
+                <h5 class="version-titulo">Directorio global</h5>
+                <div class="version-meta"><span><i class="far fa-calendar"></i> 5 de octubre, 2026</span><span><i class="fas fa-user"></i> Magdalena</span></div>
+            </div>
+            <div class="version-cuerpo">
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#64748b;"><i class="fas fa-sitemap"></i></div>
+                    <div>
+                        <h6>Base global EP360_Logistics</h6>
+                        <p>Personas, cuentas y grupos compartidos por todos los portales (EP360, Balance, HelpDesk e Intranet), con su equivalencia por portal y la migración desde EP360.</p>
+                    </div>
+                </div>
+                <div class="novedad-item">
+                    <div class="novedad-icono" style="--nov-color:#64748b;"><i class="fas fa-users-gear"></i></div>
+                    <div>
+                        <h6>Administración del directorio</h6>
+                        <p>Altas y ediciones de personas, cuentas y grupos, contraseña de usuarios externos y sincronización de usuarios con Active Directory.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

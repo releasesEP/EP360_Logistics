@@ -116,6 +116,18 @@ namespace EP360_Logistics_Admin.Models
         public string Categoria { get; set; }
         public string PuestoEnCuenta { get; set; }
     }
+
+    // Una persona vista desde un grupo: en cuales de sus cuentas es contacto y en cuales activas le falta.
+    public class GrupoContactoModel
+    {
+        public int IdPersona { get; set; }
+        public string NombrePersona { get; set; }
+        public string TipoPersona { get; set; }
+        public string Correo { get; set; }
+        public string Telefono { get; set; }
+        public System.Collections.Generic.List<PersonaCuentaModel> Vinculos { get; set; }
+        public System.Collections.Generic.List<CuentaModel> Faltantes { get; set; }
+    }
 }
 
 namespace EP360_Logistics_Admin.Models

@@ -1,0 +1,97 @@
+﻿@model EP360_Logistics_Admin.Models.CajaModel
+@{
+    bool esNueva = Model.IdCaja == 0;
+    var tipos = new[]
+    {
+        new { Valor = "Cliente", Icono = "fa-building", Titulo = "De un cliente", Texto = "Se liga a un grupo o a una cuenta." },
+        new { Valor = "Transportista", Icono = "fa-truck-fast", Titulo = "De un transportista", Texto = "Propiedad de la línea." },
+        new { Valor = "EP", Icono = "fa-warehouse", Titulo = "Propia de EP", Texto = "Trailer de EP Logistics." }
+    };
+}
+<div class="modal-content modal-ep">
+    @using (Html.BeginForm(esNueva ? "Crear" : "Editar", "Cajas", FormMethod.Post, new { data_form_modal = "" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdCaja)
+        <div class="modal-header">
+            <div class="modal-title">
+                <span class="modal-ep-icono"><i class="fas fa-trailer"></i></span>
+                <span>@(esNueva ? "Nueva caja" : "Editar caja " + Model.NumeroCaja)<small>El número se guarda en mayúsculas, sin espacios ni guiones.</small></span>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            @if (ViewBag.ErrorModal != null)
+            {
+                <div class="aviso-ep aviso-error mb-3"><i class="fas fa-circle-exclamation"></i><div>@ViewBag.ErrorModal</div></div>
+            }
+            @Html.ValidationSummary(true)
+
+            <label class="d-block">¿De quién es la caja?</label>
+            <div class="opciones-tarjeta mb-3">
+                @foreach (var t in tipos)
+                {
+                    <label class="opcion-tarjeta">
+                        <input type="radio" name="TipoPropiedad" value="@t.Valor" @(Model.TipoPropiedad == t.Valor ? "checked" : "") />
+                        <span class="opcion-caja"><i class="fas @t.Icono"></i><span><strong>@t.Titulo</strong><small>@t.Texto</small></span></span>
+                    </label>
+                }
+            </div>
+            @Html.ValidationMessageFor(m => m.TipoPropiedad, null, new { @class = "error-campo" })
+
+            <div class="row g-3">
+                @* Grupo o cuenta, nunca los dos (data-excluye limpia el otro; el SP tambien lo valida). *@
+                <div class="col-md-6" data-mostrar-si="TipoPropiedad=Cliente">
+                    @Html.LabelFor(m => m.IdGrupoCuenta)
+                    @Html.DropDownListFor(m => m.IdGrupoCuenta, (IEnumerable<SelectListItem>)ViewBag.Grupos, "(ninguno)", new { @class = "form-select", data_excluye = "IdCuenta" })
+                    <span class="ayuda-campo d-block mt-1">Lo normal: la caja es del cliente completo.</span>
+                </div>
+                <div class="col-md-6" data-mostrar-si="TipoPropiedad=Cliente">
+                    @Html.LabelFor(m => m.IdCuenta)
+                    @Html.DropDownListFor(m => m.IdCuenta, (IEnumerable<SelectListItem>)ViewBag.Cuentas, "(ninguna)", new { @class = "form-select", data_excluye = "IdGrupoCuenta" })
+                    <span class="ayuda-campo d-block mt-1">Solo si el cliente no tiene grupo.</span>
+                </div>
+                <div class="col-md-6">
+                    <label for="IdTransportista">
+                        <span data-mostrar-si="TipoPropiedad=Transportista">Transportista (dueño)</span>
+                        <span data-mostrar-si="TipoPropiedad=Cliente|EP">Transportista habitual</span>
+                    </label>
+                    @Html.DropDownListFor(m => m.IdTransportista, (IEnumerable<SelectListItem>)ViewBag.Transportistas, "(ninguno)", new { @class = "form-select" })
+                    <div class="ayuda-campo mt-1" data-mostrar-si="TipoPropiedad=Transportista">Obligatorio: la caja es de este transportista.</div>
+                    <div class="ayuda-campo mt-1" data-mostrar-si="TipoPropiedad=Cliente|EP">Opcional: quien normalmente la mueve.</div>
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.NumeroCaja)
+                    @Html.TextBoxFor(m => m.NumeroCaja, new { @class = "form-control", autofocus = "autofocus" })
+                    @Html.ValidationMessageFor(m => m.NumeroCaja, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Placa)
+                    @Html.TextBoxFor(m => m.Placa, new { @class = "form-control" })
+                </div>
+                <div class="col-md-8">
+                    @Html.LabelFor(m => m.Vin)
+                    @Html.TextBoxFor(m => m.Vin, new { @class = "form-control", maxlength = "20" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Anio)
+                    @Html.TextBoxFor(m => m.Anio, new { @class = "form-control", type = "number", min = "1950", max = "2100" })
+                    @Html.ValidationMessageFor(m => m.Anio, null, new { @class = "error-campo" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Marca)
+                    @Html.TextBoxFor(m => m.Marca, new { @class = "form-control" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Pies)
+                    @Html.TextBoxFor(m => m.Pies, new { @class = "form-control", type = "number", min = "1", max = "255", placeholder = "53" })
+                    @Html.ValidationMessageFor(m => m.Pies, null, new { @class = "error-campo" })
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-suave" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> @(esNueva ? "Crear caja" : "Guardar")</button>
+        </div>
+    }
+</div>
