@@ -201,7 +201,7 @@
                     {
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="idPersona" value="@Model.IdPersona" />
-                        @{ ViewBag.CuentasLigables = vinculables; }
+                        ViewBag.CuentasLigables = vinculables;
                         @Html.Partial("_VinculoCuentas")
                         <div class="mt-3 d-flex justify-content-end">
                             <button type="submit" class="btn-corporativo"><i class="fas fa-link"></i> Ligar</button>
