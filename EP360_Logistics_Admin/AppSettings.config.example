@@ -8,6 +8,8 @@
   <add key="AD_Password" value="" />
   <!-- Grupo de AD que administra el directorio global. -->
   <add key="AD_GrupoAdmins" value="ep360admins" />
+  <!-- Sincronizacion automatica con AD todos los dias (HH:mm). Vacio = 03:00; "off" = apagada (usar "off" en local). -->
+  <add key="SincronizacionAD_Hora" value="" />
 
   <!-- Correo (invitaciones a usuarios externos; aun no se usa). Mismo buzon y mismas llaves que EP360.
        La contrasena NO va aqui ni en el repo: en el servidor se toma de la variable de entorno de
