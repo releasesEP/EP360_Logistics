@@ -27,8 +27,11 @@
 }
 
 :root {
-    --color-brand: #1D6FD1;
-    --color-brand-hover: #0F4C9E;
+    /* Guinda de EP360 Logistics (2026-11-03): cada portal tiene su color de detalle sobre el mismo navy
+       (Traceability azul, Balance naranja cafe). --color-brand-claro es el tono que se lee sobre el navy. */
+    --color-brand: #8C1C33;
+    --color-brand-hover: #6B1427;
+    --color-brand-claro: #D45A73;
     --color-navy: #0B1B3D;
     --color-navy-text: #DCE4F5;
     --bg-page: #F4F5F7;
@@ -51,8 +54,9 @@
     color-scheme: light;
 }
 :root[data-theme="dark"] {
-    --color-brand: #4AA3E8;
-    --color-brand-hover: #6FB6EF;
+    --color-brand: #E07A8E;
+    --color-brand-hover: #EC9DAD;
+    --color-brand-claro: #E07A8E;
     --bg-page: #14171C;
     --bg-surface: #1D2128;
     --border: #2C313A;

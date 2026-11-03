@@ -10,10 +10,11 @@
             try { if (localStorage.getItem("portalTema") === "dark") document.documentElement.setAttribute("data-theme", "dark"); } catch (e) { }
         })();
     </script>
+    <link rel="icon" href="@Url.Content("~/favicon.ico?v=2")" sizes="any" />
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/bootstrap/bootstrap.min.css")" />
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/fontawesome/css/all.min.css")" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/header-footer.css")" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=14")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/header-footer.css?v=2")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=15")" />
 </head>
 @{
     var controlador = (string)ViewContext.RouteData.Values["controller"];
@@ -28,12 +29,18 @@
 }
 <body class="cuerpo-portal">
 
+    @* Menu al estilo de EP360 Traceability (2026-11-03, pedido explicito): hamburguesa + marca "EP360 | Logistics" en el
+       topbar y panel lateral navy que se desliza debajo del topbar. Abrir/cerrar en Scripts/ep-admin.js. *@
+    <div id="overlay-sidebar" class="overlay-sidebar"></div>
+
     <!-- ================= HEADER ================= -->
     <header class="topbar">
-        <button type="button" class="boton-marca" data-bs-toggle="offcanvas" data-bs-target="#menuPanel" aria-controls="menuPanel" aria-expanded="false" title="Abrir menú (tecla M)">
-            <span class="hamburguesa" aria-hidden="true"><span></span><span></span><span></span></span>
-            <span><span class="marca-texto">EP<span class="marca-acento">360</span></span><span class="marca-subtitulo">Logistics</span></span>
+        <button type="button" id="boton-menu-movil" class="boton-menu-movil" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar" title="Menú (tecla M)">
+            <i class="fas fa-bars"></i>
         </button>
+        <a href="@Url.Action("Index", "Home")" class="topbar-marca">
+            <span class="marca-texto">EP<span class="marca-acento">360</span><span class="marca-separador"> | </span><span class="marca-sufijo">Logistics</span></span>
+        </a>
 
         @if (area != null || controlador != "Home")
         {
@@ -48,109 +55,64 @@
 
         <div class="topbar-espaciador"></div>
 
-        <div class="dropdown">
-            <button type="button" class="btn-nuevo-topbar" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-plus"></i><span class="texto-nuevo"> Nuevo</span></button>
-            <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
-                <div class="dropdown-header">Directorio</div>
-                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Personas")"><i class="fas fa-user-plus"></i> Persona</a>
-                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cuentas")"><i class="fas fa-building"></i> Cuenta</a>
-                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Grupos")"><i class="fas fa-layer-group"></i> Grupo de cuentas</a>
-                <div class="dropdown-divider"></div>
-                <div class="dropdown-header">Flota</div>
-                <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-trailer"></i> Caja</a>
-                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Transportistas")"><i class="fas fa-truck-fast"></i> Transportista</a>
-                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Tractores")"><i class="fas fa-truck"></i> Tractor</a>
-                <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Choferes")"><i class="fas fa-id-card"></i> Chofer</a>
+        <div class="topbar-utilidades">
+            <div class="dropdown">
+                <button type="button" class="btn-nuevo-topbar" data-bs-toggle="dropdown" aria-expanded="false"><i class="fas fa-plus"></i><span class="texto-nuevo"> Nuevo</span></button>
+                <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                    <div class="dropdown-header">Directorio</div>
+                    <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Personas")"><i class="fas fa-user-plus"></i> Persona</a>
+                    <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cuentas")"><i class="fas fa-building"></i> Cuenta</a>
+                    <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Grupos")"><i class="fas fa-layer-group"></i> Grupo de cuentas</a>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-header">Flota</div>
+                    <a data-modal="lg" class="dropdown-item" href="@Url.Action("Crear", "Cajas")"><i class="fas fa-trailer"></i> Caja</a>
+                    <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Transportistas")"><i class="fas fa-truck-fast"></i> Transportista</a>
+                    <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Tractores")"><i class="fas fa-truck"></i> Tractor</a>
+                    <a data-modal class="dropdown-item" href="@Url.Action("Crear", "Choferes")"><i class="fas fa-id-card"></i> Chofer</a>
+                </div>
             </div>
-        </div>
 
-        <span class="pastilla-usuario" title="Sesión de Windows: @usuario">@usuarioCorto</span>
+            <span class="pastilla-usuario" title="Sesión de Windows: @usuario">@usuarioCorto</span>
+        </div>
     </header>
 
-    <!-- ================= MENU DESPLEGABLE (se abre con la marca) ================= -->
-    <aside class="offcanvas offcanvas-start menu-panel" tabindex="-1" id="menuPanel" aria-label="Menú principal">
-        <div class="offcanvas-header">
-            <button type="button" class="boton-marca" data-bs-dismiss="offcanvas" aria-label="Cerrar menú">
-                <span class="hamburguesa" aria-hidden="true"><span></span><span></span><span></span></span>
-                <span><span class="marca-texto">EP<span class="marca-acento">360</span></span><span class="marca-subtitulo">Logistics</span></span>
-            </button>
+    <!-- ================= MENU LATERAL ================= -->
+    <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+        <div class="sidebar-marca">
+            <small>Directorio global y flota</small>
+            <button type="button" id="boton-cerrar-sidebar" class="boton-cerrar-sidebar" aria-label="Cerrar menú"><i class="fas fa-xmark"></i></button>
         </div>
-        <div class="offcanvas-body">
-            <nav>
-                <a class="menu-enlace @activo("Home")" style="--i:0" href="@Url.Action("Index", "Home")">
-                    <span class="menu-enlace-icono"><i class="fas fa-gauge-high"></i></span>
-                    <span class="menu-enlace-texto"><strong>Inicio</strong><small>Tablero del directorio y la flota</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
 
-                <div class="menu-seccion">Directorio</div>
-                <a class="menu-enlace @activo("Personas")" style="--i:1" href="@Url.Action("Index", "Personas")">
-                    <span class="menu-enlace-icono"><i class="fas fa-users"></i></span>
-                    <span class="menu-enlace-texto"><strong>Personas</strong><small>Usuarios de AD, externos y contactos</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Cuentas")" style="--i:2" href="@Url.Action("Index", "Cuentas")">
-                    <span class="menu-enlace-icono"><i class="fas fa-building"></i></span>
-                    <span class="menu-enlace-texto"><strong>Cuentas</strong><small>Clientes y sus contactos</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Grupos")" style="--i:3" href="@Url.Action("Index", "Grupos")">
-                    <span class="menu-enlace-icono"><i class="fas fa-layer-group"></i></span>
-                    <span class="menu-enlace-texto"><strong>Grupos de cuentas</strong><small>Un cliente con varias cuentas</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-
-                <a class="menu-enlace @activo("Accesos")" style="--i:3" href="@Url.Action("Index", "Accesos")">
-                    <span class="menu-enlace-icono"><i class="fas fa-key"></i></span>
-                    <span class="menu-enlace-texto"><strong>Accesos a portales</strong><small>Quién entra a EP360, Balance, Help Desk...</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-
-                <a class="menu-enlace @activo("Sucursales")" style="--i:3" href="@Url.Action("Index", "Sucursales")">
-                    <span class="menu-enlace-icono"><i class="fas fa-location-dot"></i></span>
-                    <span class="menu-enlace-texto"><strong>Sucursales</strong><small>Catálogo compartido por los portales</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-
-                <div class="menu-seccion">Flota</div>
-                <a class="menu-enlace @activo("Cajas")" style="--i:4" href="@Url.Action("Index", "Cajas")">
-                    <span class="menu-enlace-icono"><i class="fas fa-trailer"></i></span>
-                    <span class="menu-enlace-texto"><strong>Cajas</strong><small>Trailers de clientes, transportistas y EP</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Transportistas")" style="--i:5" href="@Url.Action("Index", "Transportistas")">
-                    <span class="menu-enlace-icono"><i class="fas fa-truck-fast"></i></span>
-                    <span class="menu-enlace-texto"><strong>Transportistas</strong><small>Líneas con sus tractores y choferes</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Tractores")" style="--i:6" href="@Url.Action("Index", "Tractores")">
-                    <span class="menu-enlace-icono"><i class="fas fa-truck"></i></span>
-                    <span class="menu-enlace-texto"><strong>Tractores</strong><small>Económicos de cada transportista</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Choferes")" style="--i:7" href="@Url.Action("Index", "Choferes")">
-                    <span class="menu-enlace-icono"><i class="fas fa-id-card"></i></span>
-                    <span class="menu-enlace-texto"><strong>Choferes</strong><small>Operadores y con quién trabajan</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-
-                <div class="menu-seccion">Sistema</div>
-                <a class="menu-enlace @activo("Sincronizacion")" style="--i:8" href="@Url.Action("Index", "Sincronizacion")">
-                    <span class="menu-enlace-icono"><i class="fas fa-rotate"></i></span>
-                    <span class="menu-enlace-texto"><strong>Sincronización con AD</strong><small>Trae los usuarios del dominio</small></span>
-                    <i class="fas fa-chevron-right menu-enlace-flecha"></i>
-                </a>
-                <a class="menu-enlace @activo("Replicacion")" style="--i:9" href="@Url.Action("Index", "Replicacion")">
-                    <span class="menu-enlace-icono"><i class="fas fa-database"></i></span>
-                    <span class="menu-enlace-texto"><strong>Copia en el 11</strong><small>@(alertaReplicacion ?? "Replicación del 60 al servidor 11")</small></span>
-                    @if (alertaReplicacion != null) { <i class="fas fa-circle-exclamation" style="color:#4aa3e8;" title="@alertaReplicacion"></i> } else { <i class="fas fa-chevron-right menu-enlace-flecha"></i> }
-                </a>
-            </nav>
-
-            <div class="menu-panel-pie">
-                <div class="atajo">Abre y cierra este menú con <kbd>M</kbd> · cierra con <kbd>Esc</kbd></div>
+        <nav class="sidebar-nav" aria-label="Navegación principal">
+            <div class="grupo-nav">
+                <span class="grupo-etiqueta">General</span>
+                    <a class="@activo("Home")" href="@Url.Action("Index", "Home")"><i class="fas fa-gauge-high"></i> Inicio</a>
             </div>
-        </div>
+            <div class="grupo-nav">
+                <span class="grupo-etiqueta">Directorio</span>
+                    <a class="@activo("Personas")" href="@Url.Action("Index", "Personas")"><i class="fas fa-users"></i> Personas</a>
+                    <a class="@activo("Cuentas")" href="@Url.Action("Index", "Cuentas")"><i class="fas fa-building"></i> Cuentas</a>
+                    <a class="@activo("Grupos")" href="@Url.Action("Index", "Grupos")"><i class="fas fa-layer-group"></i> Grupos de cuentas</a>
+                    <a class="@activo("Accesos")" href="@Url.Action("Index", "Accesos")"><i class="fas fa-key"></i> Accesos a portales</a>
+                    <a class="@activo("Sucursales")" href="@Url.Action("Index", "Sucursales")"><i class="fas fa-location-dot"></i> Sucursales</a>
+            </div>
+            <div class="grupo-nav">
+                <span class="grupo-etiqueta">Flota</span>
+                    <a class="@activo("Cajas")" href="@Url.Action("Index", "Cajas")"><i class="fas fa-trailer"></i> Cajas</a>
+                    <a class="@activo("Transportistas")" href="@Url.Action("Index", "Transportistas")"><i class="fas fa-truck-fast"></i> Transportistas</a>
+                    <a class="@activo("Tractores")" href="@Url.Action("Index", "Tractores")"><i class="fas fa-truck"></i> Tractores</a>
+                    <a class="@activo("Choferes")" href="@Url.Action("Index", "Choferes")"><i class="fas fa-id-card"></i> Choferes</a>
+            </div>
+            <div class="grupo-nav">
+                <span class="grupo-etiqueta">Sistema</span>
+                    <a class="@activo("Sincronizacion")" href="@Url.Action("Index", "Sincronizacion")"><i class="fas fa-rotate"></i> Sincronización con AD</a>
+                <a class="@activo("Replicacion")" href="@Url.Action("Index", "Replicacion")" title="@(alertaReplicacion ?? "Replicación del 60 al servidor 11")"><i class="fas fa-database"></i> Copia en el 11
+                    @if (alertaReplicacion != null) { <i class="fas fa-circle-exclamation nav-alerta"></i> }
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-pie">Abre y cierra con <kbd>M</kbd> · cierra con <kbd>Esc</kbd></div>
     </aside>
 
     <main class="contenido-portal">
@@ -261,7 +223,7 @@
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
-                    <a href="@Url.Action("Novedades", "Home")" class="footer-version-pill" title="Ver las novedades del sistema"><i class="fas fa-code-branch" style="font-size:11px;"></i> v1.3.0</a>
+                    <a href="@Url.Action("Novedades", "Home")" class="footer-version-pill" title="Ver las novedades del sistema"><i class="fas fa-code-branch" style="font-size:11px;"></i> v1.4.0</a>
                     <span class="footer-portal-copyright">&copy; @DateTime.Now.Year - Directorio global</span>
                 </div>
             </div>
@@ -270,7 +232,7 @@
 
     <script src="@Url.Content("~/Content/lib/bootstrap/bootstrap.bundle.min.js")"></script>
     <script src="@Url.Content("~/Scripts/theme.js")"></script>
-    <script src="@Url.Content("~/Scripts/ep-admin.js?v=9")"></script>
+    <script src="@Url.Content("~/Scripts/ep-admin.js?v=10")"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

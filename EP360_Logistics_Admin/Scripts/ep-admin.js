@@ -67,24 +67,26 @@
     document.addEventListener("DOMContentLoaded", function () {
         actualizarDependientes(document);
 
-        // ---------- Menu desplegable (se abre con la marca) ----------
-        var panel = $("#menuPanel");
-        if (panel && window.bootstrap) {
-            var marca = $(".topbar .boton-marca");
-            panel.addEventListener("show.bs.offcanvas", function () {
-                document.body.classList.add("menu-desplegado");
-                if (marca) marca.setAttribute("aria-expanded", "true");
-            });
-            panel.addEventListener("hide.bs.offcanvas", function () {
-                document.body.classList.remove("menu-desplegado");
-                if (marca) marca.setAttribute("aria-expanded", "false");
-            });
-            // Tecla M abre/cierra el menu (no cuando se esta escribiendo en un campo).
+        // ---------- Menu lateral al estilo de EP360 Traceability (Scripts/sidebar.js de alla) ----------
+        // Hamburguesa abre/cierra; se cierra con la X, tocando el overlay o con Esc. La tecla M lo abre y cierra
+        // (no cuando se esta escribiendo en un campo).
+        var sidebar = $("#sidebar"), overlay = $("#overlay-sidebar"), botonMenu = $("#boton-menu-movil");
+        if (sidebar && overlay && botonMenu) {
+            var abrirMenu = function (abrir) {
+                sidebar.classList.toggle("abierto", abrir);
+                overlay.classList.toggle("visible", abrir);
+                botonMenu.setAttribute("aria-expanded", abrir ? "true" : "false");
+            };
+            botonMenu.addEventListener("click", function () { abrirMenu(!sidebar.classList.contains("abierto")); });
+            overlay.addEventListener("click", function () { abrirMenu(false); });
+            var botonCerrarMenu = $("#boton-cerrar-sidebar");
+            if (botonCerrarMenu) botonCerrarMenu.addEventListener("click", function () { abrirMenu(false); });
             document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") { abrirMenu(false); return; }
                 if ((e.key !== "m" && e.key !== "M") || e.ctrlKey || e.altKey || e.metaKey) return;
                 var t = e.target;
                 if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-                bootstrap.Offcanvas.getOrCreateInstance(panel).toggle();
+                abrirMenu(!sidebar.classList.contains("abierto"));
             });
         }
 
