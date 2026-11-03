@@ -9,6 +9,7 @@ namespace EP360_Logistics_Admin.Controllers
 
         public ActionResult Index()
         {
+            ViewBag.NombreSaludo = new ActiveDirectoryService().NombreParaSaludo(User.Identity.Name);
             return View(_inicioService.Obtener());
         }
 

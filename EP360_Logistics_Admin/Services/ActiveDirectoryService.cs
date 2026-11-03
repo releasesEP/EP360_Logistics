@@ -111,6 +111,39 @@ namespace EP360_Logistics_Admin.Services
                 : null;
         }
 
+        // Nombre para el saludo del inicio (2026-11-03, pedido: "Buenas tardes, nombre de usuario"): el nombre de pila de AD
+        // (o su DisplayName). Se cachea 1 h por usuario; si AD no responde se regresa el nombre corto de Windows, sin cachear.
+        private static readonly ConcurrentDictionary<string, Tuple<string, DateTime>> _cacheNombreSaludo =
+            new ConcurrentDictionary<string, Tuple<string, DateTime>>(StringComparer.OrdinalIgnoreCase);
+
+        public string NombreParaSaludo(string nombreUsuarioWindows)
+        {
+            string nombreCorto = ObtenerNombreCorto(nombreUsuarioWindows);
+            if (string.IsNullOrWhiteSpace(nombreCorto)) return null;
+
+            Tuple<string, DateTime> enCache;
+            if (_cacheNombreSaludo.TryGetValue(nombreCorto, out enCache) && enCache.Item2 > DateTime.UtcNow) return enCache.Item1;
+
+            try
+            {
+                using (var contexto = CrearContexto())
+                using (var usuario = UserPrincipal.FindByIdentity(contexto, IdentityType.SamAccountName, nombreCorto))
+                {
+                    string nombre = usuario == null ? null
+                        : !string.IsNullOrWhiteSpace(usuario.GivenName) ? usuario.GivenName.Trim()
+                        : !string.IsNullOrWhiteSpace(usuario.DisplayName) ? usuario.DisplayName.Trim()
+                        : null;
+                    nombre = nombre ?? nombreCorto;
+                    _cacheNombreSaludo[nombreCorto] = Tuple.Create(nombre, DateTime.UtcNow.AddHours(1));
+                    return nombre;
+                }
+            }
+            catch
+            {
+                return nombreCorto;
+            }
+        }
+
         public bool PerteneceAlGrupoAdministradores(string nombreUsuarioWindows)
         {
             string nombreCorto = ObtenerNombreCorto(nombreUsuarioWindows);
