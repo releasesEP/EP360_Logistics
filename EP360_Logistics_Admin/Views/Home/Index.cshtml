@@ -8,7 +8,7 @@
 
 <section class="hero-ep">
     <i class="fas fa-globe-americas hero-decoracion" aria-hidden="true"></i>
-    <h2>@saludo</h2>
+    <h2>@saludo@(string.IsNullOrWhiteSpace((string)ViewBag.NombreSaludo) ? "" : ", " + (string)ViewBag.NombreSaludo)</h2>
     <p>Directorio global y flota compartidos por los portales de EP Logistics: personas, clientes, cajas, transportistas, tractores y choferes en un solo lugar.</p>
     <div class="hero-meta">
         @if (e.Conectado)
