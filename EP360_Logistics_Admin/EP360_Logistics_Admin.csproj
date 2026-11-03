@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
+    <Content Include="favicon.ico" />
     <Content Include="Web.config" />
     <Content Include="ConnectionStrings.config" />
     <Content Include="AppSettings.config" />
