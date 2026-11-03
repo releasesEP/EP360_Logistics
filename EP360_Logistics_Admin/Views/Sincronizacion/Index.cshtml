@@ -17,7 +17,19 @@
             <h3><i class="fas fa-rotate"></i>Sincronización con Active Directory</h3>
             <p>Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
             @{ var horaAutomatica = EP360_Logistics_Admin.Services.SincronizacionProgramada.Hora; }
-            <p><i class="fas fa-clock"></i> @(horaAutomatica.HasValue ? "Se sincroniza sola todos los días a las " + horaAutomatica.Value.ToString(@"hh\:mm") + "." : "La sincronización automática está apagada en este servidor.")</p>
+            <p><i class="fas fa-clock"></i> @(horaAutomatica.HasValue ? "Se sincroniza sola todos los días a las " + horaAutomatica.Value.ToString(@"hh\:mm") + " (si la app estaba dormida a esa hora, corre en cuanto despierta)." : "La sincronización automática está apagada en este servidor.")</p>
+            @if (horaAutomatica.HasValue && EP360_Logistics_Admin.Services.SincronizacionProgramada.DespiertaDesde.HasValue)
+            {
+                var despierta = EP360_Logistics_Admin.Services.SincronizacionProgramada.DespiertaDesde.Value;
+                var revision = EP360_Logistics_Admin.Services.SincronizacionProgramada.UltimaRevision;
+                <p class="text-muted small mb-0">
+                    App despierta desde @despierta.ToString("dd/MM HH:mm") · última revisión del temporizador: @(revision.HasValue ? revision.Value.ToString("dd/MM HH:mm") : "aún no")
+                </p>
+            }
+            @if (EP360_Logistics_Admin.Services.SincronizacionProgramada.UltimoError != null)
+            {
+                <p class="text-danger small mb-0"><i class="fas fa-triangle-exclamation"></i> Último error de la sincronización automática (@EP360_Logistics_Admin.Services.SincronizacionProgramada.UltimoErrorFecha.Value.ToString("dd/MM HH:mm")): @EP360_Logistics_Admin.Services.SincronizacionProgramada.UltimoError</p>
+            }
         </div>
     </div>
     <div class="encabezado-acciones">

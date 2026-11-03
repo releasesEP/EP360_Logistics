@@ -176,10 +176,31 @@ jobs:
           Import-Module WebAdministration
           $pool = "${{ vars.NOMBRE_APP_POOL }}"
           $ruta = "${{ vars.RUTA_SITIO_IIS }}".TrimEnd("\")
+          # Sin el modulo Application Initialization, AlwaysRunning + preload levantan el proceso pero NO cargan la app
+          # (Application_Start no corre hasta la primera visita): asi se perdieron las 03:00 despues del 28-oct.
+          try {
+            if (Get-Command Get-WindowsFeature -ErrorAction SilentlyContinue) {
+              if (-not (Get-WindowsFeature Web-AppInit).Installed) {
+                Install-WindowsFeature Web-AppInit | Out-Null
+                Write-Output "Application Initialization instalado."
+              } else { Write-Output "Application Initialization ya estaba instalado." }
+            } else {
+              $f = Get-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationInit
+              if ($f.State -ne "Enabled") {
+                Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationInit -NoRestart | Out-Null
+                Write-Output "Application Initialization habilitado."
+              } else { Write-Output "Application Initialization ya estaba habilitado." }
+            }
+          } catch {
+            Write-Warning "No se pudo instalar Application Initialization: $_"
+          }
           try {
             Set-ItemProperty "IIS:\AppPools\$pool" -Name startMode -Value AlwaysRunning
             Set-ItemProperty "IIS:\AppPools\$pool" -Name processModel.idleTimeout -Value ([TimeSpan]::Zero)
             Write-Output "Pool $pool en AlwaysRunning y sin idle timeout."
+            # Sin el reciclaje periodico de IIS (cada 29 h): cada reciclaje reiniciaba la app y la dejaba dormida.
+            Set-ItemProperty "IIS:\AppPools\$pool" -Name recycling.periodicRestart.time -Value ([TimeSpan]::Zero)
+            Write-Output "Pool $pool sin reciclaje periodico."
             $sitio = Get-Website | Where-Object { [Environment]::ExpandEnvironmentVariables($_.physicalPath).TrimEnd("\") -eq $ruta }
             if ($sitio) {
               Set-ItemProperty "IIS:\Sites\$($sitio.name)" -Name applicationDefaults.preloadEnabled -Value $true
