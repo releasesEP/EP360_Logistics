@@ -24,7 +24,6 @@
     // La tabla no guarda las bajas: son los leidos que no fueron alta, actualizacion, omitido ni error.
     Func<SincronizacionADModel, int> bajas = s => Math.Max(0, s.Leidos - s.Altas - s.Actualizaciones - s.Omitidos - s.Errores);
     Func<string, string> pastillaEstado = e => e == "Terminada" ? "pastilla-azul" : e == "EnCurso" ? "pastilla-navy" : "pastilla-rojo";
-    Func<string, string> iconoEstado = e => e == "Terminada" ? "fa-check" : e == "EnCurso" ? "fa-spinner fa-spin" : "fa-triangle-exclamation";
     Func<string, string> textoEstado = e => e == "Terminada" ? "Terminada" : e == "EnCurso" ? "En curso" : e == "ConErrores" ? "Con errores" : e;
     Func<int, int, string> delta = (actual, previo) => actual == previo ? "igual que la anterior" : (actual > previo ? "+" : "−") + Math.Abs(actual - previo).ToString("N0") + " vs. la anterior";
 
@@ -138,21 +137,11 @@
 </div>
 
 <div class="row g-3">
-    <div class="col-xl-8">
+    <div class="col-xxl-9">
         <div class="tarjeta-ep">
             <div class="tarjeta-ep-encabezado">
                 <h6><i class="fas fa-clock-rotate-left"></i> Historial <span class="contador">@Model.Count</span></h6>
-                @if (Model.Count > 0)
-                {
-                    <div class="sync-leyenda" aria-hidden="true">
-                        <span><i class="seg-alta"></i>Altas</span>
-                        <span><i class="seg-act"></i>Actualizados</span>
-                        <span><i class="seg-baja"></i>Bajas</span>
-                        <span><i class="seg-omit"></i>Omitidos</span>
-                        <span><i class="seg-err"></i>Errores</span>
-                    </div>
-                }
-                <p>Las últimas 20 corridas. La barra reparte los usuarios leídos según lo que pasó con cada uno.</p>
+                <p>Las últimas 20 corridas. Bajas = ya estaban y dejaron de cumplir las reglas; omitidos = nuevos que no cumplen.</p>
             </div>
             @if (Model.Count == 0)
             {
@@ -167,7 +156,7 @@
                 <div class="table-responsive">
                     <table class="tabla-ep tabla-sync">
                         <thead>
-                            <tr><th>Corrida</th><th>Origen</th><th>Estado</th><th class="col-reparto">Resultado</th><th class="num">Leídos</th><th class="num">Errores</th></tr>
+                            <tr><th>Corrida</th><th>Duración</th><th>Origen</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualizados</th><th class="num">Bajas</th><th class="num">Omitidos</th><th class="num">Errores</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var s in Model)
@@ -179,39 +168,31 @@
                                 {
                                     nota = s.EjecutadoPor.Substring(s.EjecutadoPor.IndexOf(',') + 1).Trim().TrimEnd(')');
                                 }
-                                int total = Math.Max(1, s.Leidos);
                                 int b = bajas(s);
                                 <tr>
                                     <td>
-                                        <div class="fw-semibold">@dia(s.FechaInicio) <span class="texto-secundario">@s.FechaInicio.ToString("HH:mm")</span></div>
-                                        <div class="small texto-tenue">#@s.IdSincronizacion · @duracion(s)</div>
+                                        <span class="fw-semibold">@dia(s.FechaInicio)</span> <span class="texto-secundario">@s.FechaInicio.ToString("HH:mm")</span>
+                                        <span class="texto-tenue small ms-1">#@s.IdSincronizacion</span>
                                     </td>
+                                    <td class="texto-secundario">@duracion(s)</td>
                                     <td>
-                                        <span class="sync-origen @(automatica ? "auto" : "")"><i class="fas @(automatica ? "fa-robot" : "fa-user")"></i>@quien</span>
-                                        @if (nota != null) { <div class="small texto-tenue mt-1">@nota</div> }
+                                        <span class="fw-semibold">@quien</span>
+                                        @if (nota != null) { <span class="texto-tenue small ms-1">(@nota)</span> }
                                     </td>
-                                    <td><span class="pastilla @pastillaEstado(s.Estado)"><i class="fas @iconoEstado(s.Estado)"></i>@textoEstado(s.Estado)</span></td>
-                                    <td class="col-reparto">
-                                        <div class="sync-barra" title="@s.Altas altas · @s.Actualizaciones actualizados · @b bajas · @s.Omitidos omitidos · @s.Errores errores">
-                                            @if (s.Altas > 0) { <i class="seg-alta" style="width:@((s.Altas * 100.0 / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></i> }
-                                            @if (s.Actualizaciones > 0) { <i class="seg-act" style="width:@((s.Actualizaciones * 100.0 / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></i> }
-                                            @if (b > 0) { <i class="seg-baja" style="width:@((b * 100.0 / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></i> }
-                                            @if (s.Omitidos > 0) { <i class="seg-omit" style="width:@((s.Omitidos * 100.0 / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></i> }
-                                            @if (s.Errores > 0) { <i class="seg-err" style="width:@(Math.Max(1.5, s.Errores * 100.0 / total).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></i> }
-                                        </div>
-                                        <div class="sync-barra-texto">
-                                            <span class="@(s.Altas > 0 ? "fw-bold" : "")">@s.Altas altas</span> · <span>@s.Actualizaciones act.</span> · <span>@b bajas</span> · <span>@s.Omitidos omit.</span>
-                                        </div>
-                                    </td>
+                                    <td><span class="pastilla @pastillaEstado(s.Estado)">@textoEstado(s.Estado)</span></td>
                                     <td class="num fw-semibold">@s.Leidos.ToString("N0")</td>
+                                    <td class="num @(s.Altas == 0 ? "texto-tenue" : "fw-semibold")">@s.Altas.ToString("N0")</td>
+                                    <td class="num @(s.Actualizaciones == 0 ? "texto-tenue" : "")">@s.Actualizaciones.ToString("N0")</td>
+                                    <td class="num @(b == 0 ? "texto-tenue" : "")">@b.ToString("N0")</td>
+                                    <td class="num @(s.Omitidos == 0 ? "texto-tenue" : "")">@s.Omitidos.ToString("N0")</td>
                                     <td class="num">@if (s.Errores > 0) { <span class="sync-errores">@s.Errores</span> } else { <span class="texto-tenue">0</span> }</td>
                                 </tr>
                                 if (!string.IsNullOrEmpty(s.DetalleErrores))
                                 {
                                     <tr class="fila-detalle">
-                                        <td colspan="6">
+                                        <td colspan="10">
                                             <details>
-                                                <summary><i class="fas fa-bug me-1"></i>Ver detalle de errores de la corrida #@s.IdSincronizacion</summary>
+                                                <summary>Ver detalle de errores de la corrida #@s.IdSincronizacion</summary>
                                                 <pre class="detalle-error">@s.DetalleErrores</pre>
                                             </details>
                                         </td>
@@ -224,7 +205,7 @@
             }
         </div>
     </div>
-    <div class="col-xl-4">
+    <div class="col-xxl-3">
         <div class="tarjeta-ep">
             <div class="tarjeta-ep-encabezado"><h6><i class="fas fa-list-check"></i> Cómo decide quién entra</h6></div>
             <div class="tarjeta-ep-cuerpo">
