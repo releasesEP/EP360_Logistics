@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace EP360_Logistics_Admin.Models
 {
@@ -9,6 +9,17 @@ namespace EP360_Logistics_Admin.Models
         public int Valor { get; set; }
         public string Url { get; set; }
         public int? Id { get; set; }
+    }
+
+    // Algo que fallo o hay que revisar; se muestra en el modal de alertas del inicio.
+    public class AlertaInicioModel
+    {
+        public bool Critica { get; set; }      // rojo = critico; si no, azul = revisar
+        public string Area { get; set; }        // Base de datos, Active Directory, Copia en el 11...
+        public string Titulo { get; set; }
+        public string Detalle { get; set; }
+        public string TextoAccion { get; set; }
+        public string UrlAccion { get; set; }
     }
 
     public class InicioModel

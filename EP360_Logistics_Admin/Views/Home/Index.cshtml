@@ -17,6 +17,11 @@
           + " · " + (sync.Estado == "Terminada" ? "sin errores" : sync.Estado == "ConErrores" ? "con errores" : sync.Estado.ToLower());
     string nombresPortales = string.Join(", ", e.Portales.Select(x => x.Nombre.Split('(')[0].Trim()));
     int unidadesFlota = Model.CajasActivas + Model.TractoresActivos;
+    var alertas = (System.Collections.Generic.List<EP360_Logistics_Admin.Models.AlertaInicioModel>)ViewBag.Alertas
+                  ?? new System.Collections.Generic.List<EP360_Logistics_Admin.Models.AlertaInicioModel>();
+    int criticas = alertas.Count(a => a.Critica);
+    // Huella del conjunto de alertas: el modal sale solo una vez por sesion para las mismas alertas.
+    string huellaAlertas = string.Join("|", alertas.Select(a => a.Titulo)).GetHashCode().ToString("x");
 }
 
 <section class="inicio-hero">
@@ -42,6 +47,12 @@
 
     <aside class="inicio-hero-estado" aria-label="Estado del sistema">
         <div class="inicio-hero-estado-titulo">Estado del sistema</div>
+        @if (alertas.Count > 0)
+        {
+            <button type="button" class="inicio-alertas-boton @(criticas > 0 ? "critica" : "")" data-bs-toggle="modal" data-bs-target="#modalAlertasInicio">
+                <span class="punto"></span>@alertas.Count @(alertas.Count == 1 ? "alerta por revisar" : "alertas por revisar")
+            </button>
+        }
         <ul>
             <li class="@(e.Conectado ? "ok" : "mal")">
                 <span class="punto"></span>
@@ -172,6 +183,54 @@ else
     </div>
 }
 
+
+@if (alertas.Count > 0)
+{
+    @* Modal de alertas: sale al entrar al inicio si algo fallo (una vez por sesion para el mismo conjunto de alertas). *@
+    <div class="modal fade" id="modalAlertasInicio" tabindex="-1" aria-labelledby="tituloAlertasInicio" aria-hidden="true" data-huella="@huellaAlertas">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content alertas-inicio">
+                <div class="alertas-inicio-cabecera @(criticas > 0 ? "critica" : "")">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <span class="alertas-inicio-ruta">EP<b>360</b> · Logistics · Estado del sistema</span>
+                    <h2 id="tituloAlertasInicio">@(alertas.Count == 1 ? "Hay 1 cosa que revisar" : "Hay " + alertas.Count + " cosas que revisar")</h2>
+                    <p>
+                        @if (criticas > 0)
+                        {
+                            <span>@criticas @(criticas == 1 ? "es crítica" : "son críticas") y @(criticas == 1 ? "afecta" : "afectan") a los portales que usan el directorio.</span>
+                        }
+                        else
+                        {
+                            <span>Nada está detenido, pero conviene revisarlo.</span>
+                        }
+                    </p>
+                </div>
+                <ul class="alertas-inicio-lista">
+                    @foreach (var a in alertas)
+                    {
+                        <li class="@(a.Critica ? "critica" : "")">
+                            <span class="alertas-inicio-nivel">@(a.Critica ? "Crítica" : "Revisar")</span>
+                            <div class="alertas-inicio-texto">
+                                <span class="alertas-inicio-area">@a.Area</span>
+                                <b>@a.Titulo</b>
+                                @if (!string.IsNullOrEmpty(a.Detalle)) { <small>@a.Detalle</small> }
+                            </div>
+                            @if (a.UrlAccion != null)
+                            {
+                                <a class="alertas-inicio-accion" href="@a.UrlAccion">@a.TextoAccion</a>
+                            }
+                        </li>
+                    }
+                </ul>
+                <div class="alertas-inicio-pie">
+                    <span>Puedes volver a abrir este aviso desde "Estado del sistema", arriba a la derecha.</span>
+                    <button type="button" class="btn-corporativo" data-bs-dismiss="modal">Entendido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @helper Barras(System.Collections.Generic.List<EP360_Logistics_Admin.Models.BarraModel> barras, Func<EP360_Logistics_Admin.Models.BarraModel, string> url, string vacio)
 {
     if (barras.Count == 0)
@@ -192,4 +251,18 @@ else
             }
         </div>
     }
+}
+
+@section scripts {
+    <script>
+        // Abre el modal de alertas al entrar, una vez por sesion para el mismo conjunto de alertas.
+        (function () {
+            var modal = document.getElementById("modalAlertasInicio");
+            if (!modal || !window.bootstrap) return;
+            var clave = "alertasInicio:" + modal.getAttribute("data-huella");
+            var forzar = /[?&]vistaPreviaAlertas=1/.test(location.search);
+            try { if (!forzar && sessionStorage.getItem(clave)) return; sessionStorage.setItem(clave, "1"); } catch (e) { }
+            bootstrap.Modal.getOrCreateInstance(modal).show();
+        })();
+    </script>
 }

@@ -1,6 +1,7 @@
-@model EP360_Logistics_Admin.Models.OperacionReplicacionModel
+﻿@model EP360_Logistics_Admin.Models.OperacionReplicacionModel
 @{
     ViewBag.Title = "Operación #" + Model.IdCola;
+    ViewBag.TituloPestana = "#" + Model.IdCola + " · Copia en el 11";
     string pastillaEstado = Model.Estado == "Aplicada" ? "pastilla-verde" : (Model.Estado == "Divergente" ? "pastilla-rojo" : "pastilla-ambar");
 }
 

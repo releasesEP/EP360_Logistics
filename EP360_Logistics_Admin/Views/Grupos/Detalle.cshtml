@@ -1,6 +1,7 @@
 ﻿@model EP360_Logistics_Admin.Models.GrupoCuentaModel
 @{
     ViewBag.Title = Model.Nombre;
+    ViewBag.TituloPestana = Model.Nombre + " · Grupo";
     var cuentas = (List<CuentaModel>)ViewBag.Cuentas;
     var cajas = (List<CajaModel>)ViewBag.Cajas;
     var sinGrupo = (IEnumerable<SelectListItem>)ViewBag.CuentasSinGrupo;

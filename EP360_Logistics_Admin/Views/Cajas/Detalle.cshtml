@@ -1,6 +1,7 @@
-@model EP360_Logistics_Admin.Models.CajaModel
+﻿@model EP360_Logistics_Admin.Models.CajaModel
 @{
     ViewBag.Title = "Caja " + Model.NumeroCaja;
+    ViewBag.TituloPestana = Model.NumeroCaja + " · Caja";
     string colorAvatar = !Model.Activo ? "av-gris" : Model.TipoPropiedad == "Cliente" ? "av-azul" : Model.TipoPropiedad == "Transportista" ? "av-ambar" : "av-morado";
 }
 

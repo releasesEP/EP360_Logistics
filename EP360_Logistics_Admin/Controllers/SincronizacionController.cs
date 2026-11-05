@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web.Mvc;
 using EP360_Logistics_Admin.Helpers;
 using EP360_Logistics_Admin.Models;
+using EP360_Logistics_Admin.Models;
 using EP360_Logistics_Admin.Services;
 
 namespace EP360_Logistics_Admin.Controllers
@@ -12,9 +13,59 @@ namespace EP360_Logistics_Admin.Controllers
     {
         private readonly SincronizacionADService _servicio = new SincronizacionADService();
 
-        public ActionResult Index()
+        // ?formato=xlsx descarga TODAS las corridas (no solo las 20 de la pantalla) con el formato de Excel del portal.
+        public ActionResult Index(string formato)
         {
+            if (formato == "xlsx") return ExcelHistorial();
             return View(_servicio.Historial());
+        }
+
+        private ActionResult ExcelHistorial()
+        {
+            var corridas = _servicio.Historial(5000);
+            Func<SincronizacionADModel, string> origen = s => s.EjecutadoPor != null && s.EjecutadoPor.StartsWith("Autom") ? "Automática"
+                : (s.EjecutadoPor != null && s.EjecutadoPor.Contains("\\") ? s.EjecutadoPor.Substring(s.EjecutadoPor.IndexOf('\\') + 1) : s.EjecutadoPor);
+            Func<string, string> estado = e => e == "Terminada" ? "Terminada" : e == "ConErrores" ? "Con errores" : e == "EnCurso" ? "En curso" : e;
+            // Las corridas anteriores al registro detallado no guardaban bajas (lo que se deducia contaba tambien a los que ya estaban
+            // inactivos), asi que en el Excel van vacias y no se suman.
+            Func<SincronizacionADModel, bool> conDetalle = s => s.TieneDetalle || s.Bajas + s.Ausentes + s.SinCambios > 0;
+            var ultima = corridas.FirstOrDefault();
+
+            var tarjetas = new List<ExcelEP360Helper.Tarjeta>
+            {
+                new ExcelEP360Helper.Tarjeta { Etiqueta = "Corridas", Valor = corridas.Count,
+                    Nota = corridas.Count == 0 ? "" : "desde el " + corridas.Last().FechaInicio.ToString("dd/MM/yyyy") },
+                new ExcelEP360Helper.Tarjeta { Etiqueta = "Última corrida", Valor = ultima == null ? "—" : ultima.FechaInicio.ToString("dd/MM HH:mm"),
+                    Nota = ultima == null ? "" : estado(ultima.Estado) + " · " + origen(ultima) },
+                new ExcelEP360Helper.Tarjeta { Etiqueta = "Altas", Valor = corridas.Sum(s => s.Altas), Nota = "personas nuevas en total" },
+                new ExcelEP360Helper.Tarjeta { Etiqueta = "Bajas", Valor = corridas.Where(conDetalle).Sum(s => s.Bajas + s.Ausentes),
+                    Nota = corridas.Any(conDetalle) ? corridas.Sum(s => s.Ausentes) + " por ya no existir en AD" : "se cuentan desde el registro detallado" },
+                new ExcelEP360Helper.Tarjeta { Etiqueta = "Con errores", Valor = corridas.Count(s => s.Errores > 0),
+                    Nota = "corridas con algún error", Color = corridas.Any(s => s.Estado == "Fallida") ? "rojo" : null }
+            };
+            var tablas = new List<ExcelEP360Helper.TablaConteo>
+            {
+                new ExcelEP360Helper.TablaConteo { Titulo = "Corridas por estado",
+                    Renglones = corridas.GroupBy(s => estado(s.Estado)).Select(g => new KeyValuePair<string, int>(g.Key, g.Count())).OrderByDescending(k => k.Value).ToList() },
+                new ExcelEP360Helper.TablaConteo { Titulo = "Quién las corrió",
+                    Renglones = corridas.GroupBy(origen).Select(g => new KeyValuePair<string, int>(g.Key ?? "—", g.Count())).OrderByDescending(k => k.Value).ToList() }
+            };
+            var encabezados = new List<string> { "Corrida", "Inicio", "Fin", "Duración (s)", "Origen", "Estado", "Leídos", "Altas", "Actualizados",
+                "Sin cambios", "Bajas", "Ya no en AD", "Reactivaciones", "Omitidos", "Errores" };
+            var filas = corridas.Select(s => new object[]
+            {
+                "#" + s.IdSincronizacion, s.FechaInicio, (object)s.FechaFin,
+                s.FechaFin.HasValue ? (object)(int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds : null,
+                origen(s), estado(s.Estado), s.Leidos, s.Altas, s.Actualizaciones,
+                conDetalle(s) ? (object)s.SinCambios : null, conDetalle(s) ? (object)s.Bajas : null,
+                conDetalle(s) ? (object)s.Ausentes : null, conDetalle(s) ? (object)s.Reactivaciones : null, s.Omitidos, s.Errores
+            }).ToList();
+
+            byte[] bytes = ExcelEP360Helper.Generar("Sincronizaciones con Active Directory",
+                "Todas las corridas · Generado el " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"), tarjetas, tablas, encabezados, filas, 5,
+                f => (string)f[5] == "Terminada" ? "azul" : (string)f[5] == "Fallida" ? "rojo" : "gris");
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "sincronizaciones_AD_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".xlsx");
         }
 
         // Que se hizo exactamente en una corrida: altas, cada campo cambiado (antes -> despues), bajas, reactivaciones,

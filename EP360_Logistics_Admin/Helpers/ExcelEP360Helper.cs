@@ -167,6 +167,9 @@ namespace EP360_Logistics_Admin.Helpers
                 string unico = texto; int n = 2;
                 while (!usados.Add(unico)) unico = texto + " " + n++;
                 hoja.Cells[encabezado, c + 1].Value = unico;
+                // El encabezado se alinea como sus valores: numeros a la derecha.
+                var muestraEnc = filas.Select(x => c < x.Length ? x[c] : null).FirstOrDefault(v => v != null);
+                if (EsNumero(muestraEnc)) hoja.Cells[encabezado, c + 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
             }
             var enc = hoja.Cells[encabezado, 1, encabezado, columnas];
             hoja.Row(encabezado).Height = 30;
@@ -217,7 +220,7 @@ namespace EP360_Logistics_Admin.Helpers
             for (int c = 0; c < columnas; c++)
             {
                 if (c == 0) tabla.Columns[c].TotalsRowLabel = "Total";
-                else if (EsNumero(muestra[c]))
+                else if (EsNumero(filas.Select(x => c < x.Length ? x[c] : null).FirstOrDefault(v => v != null)))
                 {
                     tabla.Columns[c].TotalsRowFunction = RowFunctions.Sum;
                     hoja.Cells[ultima + 1, c + 1].Style.Numberformat.Format = "#,##0";

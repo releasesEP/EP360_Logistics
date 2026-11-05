@@ -1,6 +1,7 @@
-@model EP360_Logistics_Admin.Models.ChoferModel
+﻿@model EP360_Logistics_Admin.Models.ChoferModel
 @{
     ViewBag.Title = Model.NombreCompleto;
+    ViewBag.TituloPestana = Model.NombreCompleto + " · Chofer";
     var ligas = (List<ChoferTransportistaModel>)ViewBag.Ligas;
     var vinculables = (IEnumerable<SelectListItem>)ViewBag.Vinculables;
     int activas = ligas.Count(l => l.Activo);

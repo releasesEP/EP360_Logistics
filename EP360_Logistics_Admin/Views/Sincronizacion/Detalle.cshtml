@@ -1,8 +1,9 @@
-@model EP360_Logistics_Admin.Models.SincronizacionADDetalleVistaModel
+﻿@model EP360_Logistics_Admin.Models.SincronizacionADDetalleVistaModel
 @using EP360_Logistics_Admin.Controllers
 @{
     var c = Model.Corrida;
     ViewBag.Title = "Sincronización #" + c.IdSincronizacion;
+    ViewBag.TituloPestana = "#" + c.IdSincronizacion + " · Sincronización AD";
     var ahora = DateTime.Now;
     var conteos = (System.Collections.Generic.Dictionary<string, int>)ViewBag.Conteos;
     int personasConCambios = (int)ViewBag.PersonasConCambios;

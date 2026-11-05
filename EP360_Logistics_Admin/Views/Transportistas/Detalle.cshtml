@@ -1,6 +1,7 @@
 ﻿@model EP360_Logistics_Admin.Models.TransportistaModel
 @{
     ViewBag.Title = Model.Nombre;
+    ViewBag.TituloPestana = Model.Nombre + " · Transportista";
     var tractores = (List<TractorModel>)ViewBag.Tractores;
     var choferes = (List<ChoferModel>)ViewBag.Choferes;
     var cajas = (List<CajaModel>)ViewBag.Cajas;

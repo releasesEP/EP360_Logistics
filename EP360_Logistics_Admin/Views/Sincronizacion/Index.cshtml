@@ -51,6 +51,7 @@
         </div>
         <div class="sync-cabecera-acciones">
             <a class="btn-sobre-navy" href="@Url.Action("Index", "Personas", new { tipo = "AD" })">Ver usuarios de AD</a>
+            <a class="btn-sobre-navy" href="@Url.Action("Index", new { formato = "xlsx" })" title="Todas las corridas con sus totales"><i class="fas fa-file-excel"></i> Descargar Excel</a>
             @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new
             {
                 id = "form-sincronizar",
