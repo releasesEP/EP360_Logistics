@@ -1,0 +1,165 @@
+﻿@model EP360_Logistics_Admin.Models.SincronizacionADDetalleVistaModel
+@using EP360_Logistics_Admin.Controllers
+@{
+    var c = Model.Corrida;
+    ViewBag.Title = "Sincronización #" + c.IdSincronizacion;
+    ViewBag.TituloPestana = "#" + c.IdSincronizacion + " · Sincronización AD";
+    var ahora = DateTime.Now;
+    var conteos = (System.Collections.Generic.Dictionary<string, int>)ViewBag.Conteos;
+    int personasConCambios = (int)ViewBag.PersonasConCambios;
+    Func<string, int> conteo = g => conteos.ContainsKey(g) ? conteos[g] : 0;
+    int total = conteos.Values.Sum();
+
+    Func<DateTime, string> dia = f => f.Date == ahora.Date ? "Hoy" : f.Date == ahora.Date.AddDays(-1) ? "Ayer" : f.ToString(f.Year == ahora.Year ? "dd/MM" : "dd/MM/yyyy");
+    string duracion = "—";
+    if (c.FechaFin.HasValue)
+    {
+        int seg = (int)(c.FechaFin.Value - c.FechaInicio).TotalSeconds;
+        duracion = seg >= 60 ? (seg / 60) + " min " + (seg % 60) + " s" : (seg < 1 ? "< 1 s" : seg + " s");
+    }
+    string origen = c.EjecutadoPor != null && c.EjecutadoPor.Contains("\\") ? c.EjecutadoPor.Substring(c.EjecutadoPor.IndexOf('\\') + 1) : c.EjecutadoPor;
+    string textoEstado = c.Estado == "Terminada" ? "Terminada" : c.Estado == "EnCurso" ? "En curso" : c.Estado == "ConErrores" ? "Con errores" : c.Estado;
+
+    // Pestanas: clave del filtro, texto, conteo.
+    var pestanas = new[]
+    {
+        new { Clave = (string)null, Texto = "Todo", Conteo = total },
+        new { Clave = "Altas", Texto = "Altas", Conteo = conteo("Altas") },
+        new { Clave = "Cambios", Texto = "Cambios", Conteo = conteo("Cambios") },
+        new { Clave = "Bajas", Texto = "Bajas", Conteo = conteo("Bajas") },
+        new { Clave = "Reactivaciones", Texto = "Reactivaciones", Conteo = conteo("Reactivaciones") },
+        new { Clave = "Catalogos", Texto = "Sucursales y departamentos", Conteo = conteo("Catalogos") },
+        new { Clave = "Omitidos", Texto = "Omitidos", Conteo = conteo("Omitidos") },
+        new { Clave = "Errores", Texto = "Errores", Conteo = conteo("Errores") }
+    };
+    Func<string, string> pastilla = m => m == "Error" ? "pastilla-rojo" : m == "Baja" || m == "Desactivada" ? "pastilla-navy" : m == "Alta" || m == "Reactivación" || m == "Reactivada" ? "pastilla-azul" : "pastilla-gris";
+}
+
+@* Una sola tarjeta: que corrida es, como termino y acciones *@
+<section class="sync-cabecera">
+    <div class="sync-cabecera-arriba">
+        <div class="sync-cabecera-titulo">
+            <a href="@Url.Action("Index")" class="sync-atras" title="Volver a la sincronización" aria-label="Volver a la sincronización"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <span class="sync-cabecera-ruta">Sincronización con Active Directory · corrida #@c.IdSincronizacion</span>
+                <h1>@dia(c.FechaInicio) a las @c.FechaInicio.ToString("HH:mm")</h1>
+                <p>Todo lo que hizo esta corrida en el directorio global: cada persona nueva, cada dato que cambió con su valor anterior y el nuevo, las bajas y lo que se desactivó.</p>
+            </div>
+        </div>
+        <div class="sync-cabecera-acciones">
+            @if (Model.Anterior.HasValue)
+            {
+                <a class="btn-sobre-navy" href="@Url.Action("Detalle", new { id = Model.Anterior })" title="Corrida anterior">‹ Anterior</a>
+            }
+            @if (Model.Siguiente.HasValue)
+            {
+                <a class="btn-sobre-navy" href="@Url.Action("Detalle", new { id = Model.Siguiente })" title="Corrida siguiente">Siguiente ›</a>
+            }
+            @if (c.TieneDetalle)
+            {
+                <a class="btn-blanco" href="@Url.Action("Detalle", new { id = c.IdSincronizacion, formato = "xlsx" })"><i class="fas fa-file-excel"></i> Descargar Excel</a>
+            }
+        </div>
+    </div>
+    <div class="sync-cabecera-abajo">
+        <dl class="sync-datos">
+            <div><dt>Estado</dt><dd>@textoEstado</dd></div>
+            <div><dt>Inicio</dt><dd>@c.FechaInicio.ToString("dd/MM/yyyy HH:mm:ss")</dd></div>
+            <div><dt>Duración</dt><dd>@duracion</dd></div>
+            <div><dt>Origen</dt><dd>@origen</dd></div>
+        </dl>
+    </div>
+</section>
+
+<div class="sync-kpis sync-kpis-7 mb-4">
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Leídos de AD</div><div class="kpi-tile-valor">@c.Leidos.ToString("N0")</div><span class="kpi-tile-detalle">usuarios del dominio</span></div>
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Altas</div><div class="kpi-tile-valor">@c.Altas.ToString("N0")</div><span class="kpi-tile-detalle">personas nuevas</span></div>
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Con cambios</div><div class="kpi-tile-valor">@(c.TieneDetalle ? personasConCambios.ToString("N0") : c.Actualizaciones.ToString("N0"))</div><span class="kpi-tile-detalle">@(c.TieneDetalle ? conteo("Cambios").ToString("N0") + " datos nuevos" : "actualizados")</span></div>
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Sin cambios</div><div class="kpi-tile-valor">@(c.TieneDetalle ? c.SinCambios.ToString("N0") : "—")</div><span class="kpi-tile-detalle">ya estaban al día</span></div>
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Bajas</div><div class="kpi-tile-valor">@((c.Bajas + c.Ausentes).ToString("N0"))</div><span class="kpi-tile-detalle">@(c.Ausentes > 0 ? c.Ausentes + " ya no existen en AD" : "dejaron de cumplir")</span></div>
+    <div class="kpi-tile"><div class="kpi-tile-etiqueta">Omitidos</div><div class="kpi-tile-valor">@c.Omitidos.ToString("N0")</div><span class="kpi-tile-detalle">nuevos que no cumplen</span></div>
+    <div class="kpi-tile @(c.Errores > 0 ? "kpi-tile-alerta" : "")"><div class="kpi-tile-etiqueta">Errores</div><div class="kpi-tile-valor">@c.Errores.ToString("N0")</div><span class="kpi-tile-detalle">@(c.Errores > 0 ? "revisa la pestaña Errores" : "sin conflictos")</span></div>
+</div>
+
+@if (!c.TieneDetalle)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <h6>Esta corrida no tiene detalle por persona</h6>
+            <p>Es anterior al registro detallado de la sincronización, así que solo se guardaron los totales de arriba. Las corridas nuevas guardan cada alta, cada dato que cambió (antes y después) y cada baja.</p>
+            @if (!string.IsNullOrEmpty(c.DetalleErrores))
+            {
+                <pre class="detalle-error text-start mt-3">@c.DetalleErrores</pre>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="listado-filtros">
+        <nav class="listado-pestanas" aria-label="Tipo de movimiento">
+            @foreach (var p in pestanas)
+            {
+                if (p.Clave != null && p.Conteo == 0) { continue; }
+                <a href="@Url.Action("Detalle", new { id = c.IdSincronizacion, filtro = p.Clave, buscar = Model.Buscar })" class="listado-pestana @(Model.Filtro == p.Clave ? "activo" : "")">
+                    <span>@p.Texto</span><b>@p.Conteo.ToString("N0")</b>
+                </a>
+            }
+        </nav>
+        <form method="get" action="@Url.Action("Detalle", new { id = c.IdSincronizacion })" class="listado-controles">
+            @if (Model.Filtro != null) { <input type="hidden" name="filtro" value="@Model.Filtro" /> }
+            <div class="listado-buscar">
+                <i class="fas fa-magnifying-glass"></i>
+                <input type="search" name="buscar" value="@Model.Buscar" autocomplete="off" placeholder="Buscar por nombre, usuario, campo o valor..." />
+            </div>
+        </form>
+    </div>
+
+    if (Model.Renglones.Count == 0)
+    {
+        <div class="tarjeta-tabla-ep">
+            <div class="vacio-ep">
+                <h6>Nada con ese filtro</h6>
+                <p>Prueba con otra pestaña u otra búsqueda.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="tarjeta-tabla-ep">
+            <div class="table-responsive">
+                <table class="tabla-ep tabla-sync tabla-detalle-sync">
+                    <thead>
+                        <tr><th>Fecha</th><th>Nombre</th><th>Usuario AD</th><th>Movimiento</th><th>Dato</th><th>Valor anterior</th><th>Valor nuevo</th><th>Motivo</th></tr>
+                    </thead>
+                    <tbody>
+                        @{ string previo = null; }
+                        @foreach (var r in Model.Renglones)
+                        {
+                            string movimiento = SincronizacionController.NombreMovimiento(r);
+                            string clave = r.Entidad + "|" + (r.IdEntidad.HasValue ? r.IdEntidad.Value.ToString() : r.Usuario);
+                            bool mismo = clave == previo;
+                            previo = clave;
+                            <tr class="@(mismo ? "fila-continua" : "")">
+                                <td class="texto-secundario">@r.Fecha.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                <td>
+                                    @if (!mismo)
+                                    {
+                                        <span class="fw-semibold">@r.Nombre</span>
+                                        if (r.Entidad != "Persona") { <span class="texto-tenue small ms-1">@r.Entidad.ToLower()</span> }
+                                    }
+                                </td>
+                                <td class="texto-secundario">@(mismo ? "" : r.Usuario)</td>
+                                <td><span class="pastilla @pastilla(movimiento)">@movimiento</span></td>
+                                <td>@r.Campo</td>
+                                <td class="valor-anterior">@(r.ValorAnterior ?? (r.Campo != null && r.Accion == "Cambio" ? "—" : ""))</td>
+                                <td class="valor-nuevo">@(r.ValorNuevo ?? (r.Campo != null && r.Accion == "Cambio" ? "(vacío)" : ""))</td>
+                                <td class="texto-secundario sync-motivo">@r.Motivo</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}

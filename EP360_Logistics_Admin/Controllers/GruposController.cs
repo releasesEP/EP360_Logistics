@@ -31,8 +31,8 @@ namespace EP360_Logistics_Admin.Controllers
                     { "cajas", g => cajasDe(g) }
                 }).ToList();
 
-            if (formato == "csv")
-                return ListadoHelpers.Csv("grupos", resultado,
+            if (formato == "xlsx" || formato == "csv")
+                return ListadoHelpers.Exportar("grupos", resultado,
                     ("Folio", g => g.Folio), ("Nombre", g => g.Nombre), ("Cuentas", g => g.TotalCuentas),
                     ("Cajas", g => cajasDe(g)), ("Activo", g => g.Activo));
 

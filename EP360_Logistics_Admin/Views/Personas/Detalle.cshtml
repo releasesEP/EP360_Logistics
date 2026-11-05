@@ -1,6 +1,7 @@
-@model EP360_Logistics_Admin.Models.PersonaModel
+﻿@model EP360_Logistics_Admin.Models.PersonaModel
 @{
     ViewBag.Title = Model.NombreCompleto;
+    ViewBag.TituloPestana = Model.NombreCompleto + " · Persona";
     var cuentas = (List<PersonaCuentaModel>)ViewBag.Cuentas;
     var vinculables = (IEnumerable<SelectListItem>)ViewBag.CuentasVinculables;
     var credencial = ViewBag.Credencial as CredencialEstadoModel;
