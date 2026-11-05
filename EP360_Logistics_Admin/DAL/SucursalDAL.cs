@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using EP360_Logistics_Admin.DAL.Infraestructura;
 using EP360_Logistics_Admin.Models;
@@ -34,6 +34,7 @@ namespace EP360_Logistics_Admin.DAL
 
         // Final de cada sincronizacion con AD (Database/14_SucursalesSinUso.sql): desactiva las que ya no tienen personas ni cuentas
         // y reactiva las que ella misma desactivo si volvieron a tener personas. Sin resultado: el Replicador compara resultados 60 vs 11.
-        public void Reconciliar() { Ejecutar("dir.sp_ReconciliarSucursales"); }
+        // Con idSincronizacion, lo que desactiva/reactiva queda en el detalle de esa corrida (Database/16_SincronizacionADDetalle.sql).
+        public void Reconciliar(int idSincronizacion) { Ejecutar("dir.sp_ReconciliarSucursales", P("@idSincronizacion", idSincronizacion)); }
     }
 }

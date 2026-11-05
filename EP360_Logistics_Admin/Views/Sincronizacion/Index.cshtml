@@ -21,8 +21,10 @@
         int seg = (int)(s.FechaFin.Value - s.FechaInicio).TotalSeconds;
         return seg >= 60 ? (seg / 60) + " min " + (seg % 60) + " s" : (seg < 1 ? "< 1 s" : seg + " s");
     };
-    // La tabla no guarda las bajas: son los leidos que no fueron alta, actualizacion, omitido ni error.
-    Func<SincronizacionADModel, int> bajas = s => Math.Max(0, s.Leidos - s.Altas - s.Actualizaciones - s.Omitidos - s.Errores);
+    // Desde el registro detallado (script 16) la corrida guarda sus bajas (incluidas las de quien ya no existe en AD).
+    // En las anteriores se deducen: leidos que no fueron alta, actualizacion, omitido ni error.
+    Func<SincronizacionADModel, int> bajas = s => s.TieneDetalle || s.Bajas + s.Ausentes > 0 ? s.Bajas + s.Ausentes : Math.Max(0, s.Leidos - s.Altas - s.Actualizaciones - s.Omitidos - s.Errores);
+    Func<string, string> sinDominio = q => q != null && q.Contains("\\") ? q.Substring(q.IndexOf('\\') + 1) : q;
     Func<string, string> pastillaEstado = e => e == "Terminada" ? "pastilla-azul" : e == "EnCurso" ? "pastilla-navy" : "pastilla-rojo";
     Func<string, string> textoEstado = e => e == "Terminada" ? "Terminada" : e == "EnCurso" ? "En curso" : e == "ConErrores" ? "Con errores" : e;
     Func<int, int, string> delta = (actual, previo) => actual == previo ? "igual que la anterior" : (actual > previo ? "+" : "−") + Math.Abs(actual - previo).ToString("N0") + " vs. la anterior";
@@ -36,60 +38,52 @@
     else { estadoTitulo = "Directorio al día con AD"; estadoDetalle = "La última corrida terminó sin errores."; estadoIcono = "fa-circle-check"; estadoClase = "ok"; }
 }
 
-<div class="encabezado">
-    <div class="encabezado-titulo">
-        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
-        <div>
-            <h3><i class="fas fa-rotate"></i>Sincronización con Active Directory</h3>
-            <p>Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+@* Una sola tarjeta: titulo, acciones, estado de la sincronizacion y proxima corrida *@
+<section class="sync-cabecera">
+    <div class="sync-cabecera-arriba">
+        <div class="sync-cabecera-titulo">
+            <a href="@Url.Action("Index", "Home")" class="sync-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <span class="sync-cabecera-ruta">Directorio global</span>
+                <h1>Sincronización con Active Directory</h1>
+                <p>Trae los usuarios del dominio al directorio global. Se identifican por su objectSid, no por el nombre de usuario.</p>
+            </div>
         </div>
-    </div>
-    <div class="encabezado-acciones">
-        <a class="btn-suave" href="@Url.Action("Index", "Personas", new { tipo = "AD" })"><i class="fas fa-users"></i> Ver usuarios de AD</a>
-        @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new
-        {
-            id = "form-sincronizar",
-            data_confirmar = "¿Sincronizar ahora con Active Directory?",
-            data_confirmar_detalle = "Se leen todos los usuarios del dominio. Puede tardar un par de minutos; no cierres la página mientras corre.",
-            data_confirmar_tipo = "normal",
-            data_confirmar_boton = "Sí, sincronizar"
-        }))
-        {
-            @Html.AntiForgeryToken()
-            <button type="submit" id="boton-sincronizar" class="btn-corporativo"><i class="fas fa-rotate"></i> Sincronizar ahora</button>
-        }
-    </div>
-</div>
-
-@* Panel de estado: como va la sincronizacion y cuando toca la siguiente *@
-<section class="sync-estado">
-    <div class="sync-estado-principal">
-        <div class="sync-estado-icono @estadoClase"><i class="fas @estadoIcono"></i></div>
-        <div>
-            <div class="sync-estado-titulo">@estadoTitulo</div>
-            <div class="sync-estado-detalle">@estadoDetalle</div>
-            @if (ultima != null)
+        <div class="sync-cabecera-acciones">
+            <a class="btn-sobre-navy" href="@Url.Action("Index", "Personas", new { tipo = "AD" })">Ver usuarios de AD</a>
+            @using (Html.BeginForm("Sincronizar", "Sincronizacion", FormMethod.Post, new
             {
-                <div class="sync-estado-chips">
-                    <span><i class="fas fa-clock-rotate-left"></i> Última: @dia(ultima.FechaInicio).ToLower() @ultima.FechaInicio.ToString("HH:mm")</span>
-                    <span><i class="fas fa-stopwatch"></i> Duró @duracion(ultima)</span>
-                    <span><i class="fas @(ultima.EjecutadoPor != null && ultima.EjecutadoPor.StartsWith("Autom") ? "fa-robot" : "fa-user")"></i> @(ultima.EjecutadoPor != null && ultima.EjecutadoPor.Contains("\\") ? ultima.EjecutadoPor.Substring(ultima.EjecutadoPor.IndexOf('\\') + 1) : ultima.EjecutadoPor)</span>
-                </div>
+                id = "form-sincronizar",
+                data_confirmar = "¿Sincronizar ahora con Active Directory?",
+                data_confirmar_detalle = "Se leen todos los usuarios del dominio. Puede tardar un par de minutos; no cierres la página mientras corre.",
+                data_confirmar_tipo = "normal",
+                data_confirmar_boton = "Sí, sincronizar"
+            }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" id="boton-sincronizar" class="btn-blanco"><i class="fas fa-rotate"></i> Sincronizar ahora</button>
             }
         </div>
     </div>
-    <div class="sync-estado-proxima">
-        @if (proxima.HasValue)
+    <div class="sync-cabecera-abajo">
+        <div class="sync-estado-principal">
+            <div class="sync-estado-icono @estadoClase"><i class="fas @estadoIcono"></i></div>
+            <div>
+                <div class="sync-estado-titulo">@estadoTitulo</div>
+                <div class="sync-estado-detalle">@estadoDetalle</div>
+            </div>
+        </div>
+        @if (ultima != null)
         {
-            <div class="sync-estado-etiqueta">Próxima automática</div>
-            <div class="sync-estado-hora">@proxima.Value.ToString("HH:mm")</div>
-            <div class="sync-estado-dia">@dia(proxima.Value) · todos los días</div>
-        }
-        else
-        {
-            <div class="sync-estado-etiqueta">Automática</div>
-            <div class="sync-estado-hora apagada">Apagada</div>
-            <div class="sync-estado-dia">Solo a mano en este servidor</div>
+            <dl class="sync-datos">
+                <div><dt>Última corrida</dt><dd>@dia(ultima.FechaInicio) @ultima.FechaInicio.ToString("HH:mm")</dd></div>
+                <div><dt>Duración</dt><dd>@duracion(ultima)</dd></div>
+                <div><dt>Origen</dt><dd>@sinDominio(ultima.EjecutadoPor)</dd></div>
+                <div class="sync-datos-proxima">
+                    <dt>Próxima automática</dt>
+                    <dd>@(proxima.HasValue ? dia(proxima.Value) + " " + proxima.Value.ToString("HH:mm") : "Apagada en este servidor")</dd>
+                </div>
+            </dl>
         }
     </div>
 </section>
@@ -118,15 +112,15 @@
     </div>
     <div class="kpi-tile">
         <div class="kpi-tile-icono" style="--kpi-color:#2b7fd4;"><i class="fas fa-user-pen"></i></div>
-        <div class="kpi-tile-etiqueta">Actualizados</div>
+        <div class="kpi-tile-etiqueta">@(ultima != null && ultima.TieneDetalle ? "Con cambios" : "Actualizados")</div>
         <div class="kpi-tile-valor">@(ultima != null ? ultima.Actualizaciones.ToString("N0") : "—")</div>
-        <span class="kpi-tile-detalle">datos tomados de AD</span>
+        <span class="kpi-tile-detalle">@(ultima != null && ultima.TieneDetalle ? ultima.SinCambios.ToString("N0") + " sin cambios" : "datos tomados de AD")</span>
     </div>
     <div class="kpi-tile">
         <div class="kpi-tile-icono" style="--kpi-color:#64748b;"><i class="fas fa-user-minus"></i></div>
         <div class="kpi-tile-etiqueta">Bajas · omitidos</div>
         <div class="kpi-tile-valor">@(ultima != null ? bajas(ultima).ToString("N0") : "—")<small>@(ultima != null ? "· " + ultima.Omitidos.ToString("N0") : "")</small></div>
-        <span class="kpi-tile-detalle">no cumplen las reglas</span>
+        <span class="kpi-tile-detalle">@(ultima != null && ultima.Ausentes > 0 ? ultima.Ausentes + " ya no existen en AD" : "no cumplen las reglas")</span>
     </div>
     <div class="kpi-tile @(ultima != null && ultima.Errores > 0 ? "kpi-tile-alerta" : "")">
         <div class="kpi-tile-icono" style="--kpi-color:@(ultima != null && ultima.Errores > 0 ? "#dc2626" : "#64748b");"><i class="fas @(ultima != null && ultima.Errores > 0 ? "fa-triangle-exclamation" : "fa-shield-halved")"></i></div>
@@ -141,7 +135,7 @@
         <div class="tarjeta-ep">
             <div class="tarjeta-ep-encabezado">
                 <h6><i class="fas fa-clock-rotate-left"></i> Historial <span class="contador">@Model.Count</span></h6>
-                <p>Las últimas 20 corridas. Bajas = ya estaban y dejaron de cumplir las reglas; omitidos = nuevos que no cumplen.</p>
+                <p>Las últimas 20 corridas. Da clic en una para ver qué se hizo exactamente: altas, cada dato que cambió (antes y después), bajas y omitidos.</p>
             </div>
             @if (Model.Count == 0)
             {
@@ -156,7 +150,7 @@
                 <div class="table-responsive">
                     <table class="tabla-ep tabla-sync">
                         <thead>
-                            <tr><th>Corrida</th><th>Duración</th><th>Origen</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualizados</th><th class="num">Bajas</th><th class="num">Omitidos</th><th class="num">Errores</th></tr>
+                            <tr><th>Corrida</th><th>Duración</th><th>Origen</th><th>Estado</th><th class="num">Leídos</th><th class="num">Altas</th><th class="num">Actualizados</th><th class="num">Bajas</th><th class="num">Omitidos</th><th class="num">Errores</th><th></th></tr>
                         </thead>
                         <tbody>
                             @foreach (var s in Model)
@@ -169,7 +163,7 @@
                                     nota = s.EjecutadoPor.Substring(s.EjecutadoPor.IndexOf(',') + 1).Trim().TrimEnd(')');
                                 }
                                 int b = bajas(s);
-                                <tr>
+                                <tr class="fila-enlace" data-href="@Url.Action("Detalle", new { id = s.IdSincronizacion })">
                                     <td>
                                         <span class="fw-semibold">@dia(s.FechaInicio)</span> <span class="texto-secundario">@s.FechaInicio.ToString("HH:mm")</span>
                                         <span class="texto-tenue small ms-1">#@s.IdSincronizacion</span>
@@ -186,11 +180,12 @@
                                     <td class="num @(b == 0 ? "texto-tenue" : "")">@b.ToString("N0")</td>
                                     <td class="num @(s.Omitidos == 0 ? "texto-tenue" : "")">@s.Omitidos.ToString("N0")</td>
                                     <td class="num">@if (s.Errores > 0) { <span class="sync-errores">@s.Errores</span> } else { <span class="texto-tenue">0</span> }</td>
+                                    <td class="text-end"><a class="enlace-detalle" href="@Url.Action("Detalle", new { id = s.IdSincronizacion })">Ver detalle</a></td>
                                 </tr>
                                 if (!string.IsNullOrEmpty(s.DetalleErrores))
                                 {
                                     <tr class="fila-detalle">
-                                        <td colspan="10">
+                                        <td colspan="11">
                                             <details>
                                                 <summary>Ver detalle de errores de la corrida #@s.IdSincronizacion</summary>
                                                 <pre class="detalle-error">@s.DetalleErrores</pre>
@@ -213,7 +208,9 @@
                     <li><span class="sync-regla-icono"><i class="fas fa-filter"></i></span><span><b>Solo entra quien cumple todo:</b> cuenta activa, puesto, departamento, oficina, compañía y jefe asignados en AD.</span></li>
                     <li><span class="sync-regla-icono"><i class="fas fa-robot"></i></span><span>Las cuentas de sistema (HealthMailbox, SystemMailbox, DiscoverySearchMailbox, etc.) se excluyen siempre.</span></li>
                     <li><span class="sync-regla-icono"><i class="fas fa-user-clock"></i></span><span>Un usuario nuevo que no cumple no se crea. Uno que ya estaba y deja de cumplir se da de <b>baja lógica</b>; si vuelve a cumplir, se reactiva.</span></li>
-                    <li><span class="sync-regla-icono"><i class="fas fa-arrows-rotate"></i></span><span>Puesto, departamento y oficina vienen de AD y se actualizan en cada corrida.</span></li>
+                    <li><span class="sync-regla-icono"><i class="fas fa-user-slash"></i></span><span>Quien <b>ya no existe en AD</b> se da de baja. Si la lectura de AD sale incompleta, nadie se da de baja por eso.</span></li>
+                    <li><span class="sync-regla-icono"><i class="fas fa-arrows-rotate"></i></span><span>Puesto, departamento y oficina vienen de AD. Cada valor nuevo queda registrado con la fecha de la corrida.</span></li>
+                    <li><span class="sync-regla-icono"><i class="fas fa-building-circle-xmark"></i></span><span>Las <b>sucursales y departamentos</b> que se quedan sin personas activas se desactivan (las sucursales con cuentas activas se conservan).</span></li>
                     <li><span class="sync-regla-icono"><i class="fas fa-code-merge"></i></span><span>Si el correo o el usuario chocan con otra persona, ese usuario se salta y queda en el detalle de errores; los demás siguen.</span></li>
                 </ol>
             </div>
@@ -234,6 +231,13 @@
 @section scripts {
     <script>
         // Evita doble clic mientras corre la sincronizacion (el envio real ocurre despues de confirmar).
+        // Toda la fila abre el detalle de esa corrida (salvo que se de clic en un enlace o en el detalle de errores).
+        document.querySelectorAll("tr.fila-enlace").forEach(function (tr) {
+            tr.addEventListener("click", function (e) {
+                if (e.target.closest("a, summary, details")) return;
+                window.location = tr.getAttribute("data-href");
+            });
+        });
         document.getElementById("form-sincronizar").addEventListener("submit", function () {
             var b = document.getElementById("boton-sincronizar");
             b.disabled = true;

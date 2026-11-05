@@ -27,8 +27,8 @@ namespace EP360_Logistics_Admin.Controllers
                     { "cuentas", s => s.Cuentas }
                 }).ToList();
 
-            if (formato == "csv")
-                return ListadoHelpers.Csv("sucursales", resultado,
+            if (formato == "xlsx" || formato == "csv")
+                return ListadoHelpers.Exportar("sucursales", resultado,
                     ("Nombre", s => s.Nombre), ("Personas", s => s.Personas), ("Cuentas", s => s.Cuentas), ("Activa", s => s.Activo));
 
             var encabezado = new EncabezadoListado

@@ -40,8 +40,8 @@ namespace EP360_Logistics_Admin.Controllers
                     { "sucursal", c => c.Sucursal ?? "￿" }
                 }).ToList();
 
-            if (formato == "csv")
-                return ListadoHelpers.Csv("cuentas", resultado,
+            if (formato == "xlsx" || formato == "csv")
+                return ListadoHelpers.Exportar("cuentas", resultado,
                     ("Folio", c => c.Folio), ("Nombre comercial", c => c.NombreComercial), ("Código", c => c.CodigoCuenta),
                     ("Razón social", c => c.RazonSocial), ("RFC", c => c.Rfc), ("Grupo", c => c.GrupoCuenta),
                     ("Ciudad", c => c.Ciudad), ("País", c => c.Pais), ("Sucursal", c => c.Sucursal), ("Activa", c => c.Activo));
