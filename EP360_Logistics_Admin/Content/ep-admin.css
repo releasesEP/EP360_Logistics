@@ -1449,3 +1449,86 @@ a.footer-version-pill:hover { color: var(--color-brand-claro); }
 
 :root[data-theme="dark"] .encabezado::before { background: linear-gradient(180deg, var(--acento-oscuro), rgba(224, 122, 142, .3)); }
 :root[data-theme="dark"] .enlace-detalle { color: var(--acento-oscuro); }
+
+/* ==========================================================================
+   Encabezado de TODAS las pantallas igual al de Sincronizacion con AD (pedido 2026-11-05):
+   tarjeta navy con brillo guinda, titulo blanco, descripcion clara y botones en version "sobre navy".
+   Solo CSS sobre .encabezado: las vistas no cambian.
+   ========================================================================== */
+.encabezado {
+    padding: 26px 30px;
+    border: 0;
+    border-radius: 20px;
+    background: radial-gradient(120% 160% at 100% 0%, rgba(140, 28, 51, .28) 0%, rgba(140, 28, 51, 0) 45%), var(--color-principal-oscuro);
+    box-shadow: 0 1px 2px rgba(11, 27, 61, .2), 0 18px 40px rgba(11, 27, 61, .16);
+    color: #dce4f5;
+}
+    .encabezado::before { display: none; }
+.encabezado h3 { color: #fff !important; font-size: 1.65rem; font-weight: 700; letter-spacing: -.015em; margin-bottom: 6px; }
+.encabezado h3 i { display: none; }
+.encabezado p { color: rgba(220, 228, 245, .72); font-size: .9rem; max-width: 820px; }
+.encabezado .btn-atras { background: transparent; color: #fff !important; border: 1px solid rgba(255, 255, 255, .22); }
+    .encabezado .btn-atras:hover { background: rgba(255, 255, 255, .12) !important; border-color: rgba(255, 255, 255, .4); color: #fff !important; }
+.encabezado .btn-suave { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, .28); box-shadow: none; }
+    .encabezado .btn-suave:hover { background: rgba(255, 255, 255, .1); color: #fff; border-color: rgba(255, 255, 255, .45); }
+.encabezado .btn-corporativo { background: #fff !important; color: var(--color-principal-oscuro) !important; border: 0 !important; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+    .encabezado .btn-corporativo:hover { background: #f1f4fa !important; color: var(--color-principal-oscuro) !important; }
+.encabezado .btn-peligro-suave { background: rgba(248, 113, 113, .14); color: #fecaca; border: 1px solid rgba(248, 113, 113, .4); }
+    .encabezado .btn-peligro-suave:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+.encabezado .btn-outline-corporativo { color: #fff !important; border-color: rgba(255, 255, 255, .5) !important; }
+.encabezado a:not([class]) { color: var(--color-brand-claro); }
+.encabezado .text-muted, .encabezado .texto-secundario, .encabezado .texto-tenue { color: rgba(220, 228, 245, .6) !important; }
+:root[data-theme="dark"] .encabezado { background: radial-gradient(120% 160% at 100% 0%, rgba(224, 122, 142, .16) 0%, rgba(224, 122, 142, 0) 45%), #0f2347; border: 1px solid rgba(255, 255, 255, .06); }
+@media (max-width: 575.98px) { .encabezado { padding: 18px; } .encabezado h3 { font-size: 1.3rem; } }
+
+/* ==========================================================================
+   Inicio: encabezado grande con saludo, fecha, descripcion, cifras principales y estado del sistema.
+   ========================================================================== */
+.inicio-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 28px;
+    padding: 36px 40px;
+    margin-bottom: 26px;
+    border-radius: 24px;
+    color: #dce4f5;
+    background:
+        radial-gradient(90% 120% at 100% 0%, rgba(140, 28, 51, .34) 0%, rgba(140, 28, 51, 0) 50%),
+        radial-gradient(70% 90% at 0% 100%, rgba(29, 111, 209, .16) 0%, rgba(29, 111, 209, 0) 55%),
+        var(--color-principal-oscuro);
+    box-shadow: 0 1px 2px rgba(11, 27, 61, .25), 0 24px 60px rgba(11, 27, 61, .22);
+}
+.inicio-hero-marca { font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: rgba(220, 228, 245, .6); }
+    .inicio-hero-marca b { color: var(--color-brand-claro); font-weight: 800; }
+    .inicio-hero-marca span { margin-left: 10px; padding-left: 10px; border-left: 1px solid rgba(255, 255, 255, .2); }
+.inicio-hero h1 { margin: 14px 0 4px; font-size: clamp(2rem, 2.6vw, 2.9rem); font-weight: 700; letter-spacing: -.025em; color: #fff; line-height: 1.1; }
+.inicio-hero-fecha { font-size: .95rem; font-weight: 500; color: var(--color-brand-claro); }
+.inicio-hero-principal p { margin: 16px 0 0; max-width: 760px; font-size: 1rem; line-height: 1.6; color: rgba(220, 228, 245, .78); }
+.inicio-hero-cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 28px; border-top: 1px solid rgba(255, 255, 255, .1); }
+    .inicio-hero-cifras > * { display: block; padding: 18px 20px 4px 0; color: inherit; text-decoration: none; }
+    .inicio-hero-cifras > * + * { padding-left: 20px; border-left: 1px solid rgba(255, 255, 255, .08); }
+    .inicio-hero-cifras strong { display: block; font-family: "Sora", system-ui, sans-serif; font-size: 2.3rem; font-weight: 700; letter-spacing: -.03em; color: #fff; line-height: 1.05; font-variant-numeric: tabular-nums; }
+    .inicio-hero-cifras span { display: block; margin-top: 4px; font-size: .86rem; font-weight: 600; color: #fff; }
+    .inicio-hero-cifras small { display: block; margin-top: 2px; font-size: .76rem; color: rgba(220, 228, 245, .55); }
+    .inicio-hero-cifras a:hover strong { color: var(--color-brand-claro); }
+.inicio-hero-estado { align-self: start; padding: 22px 22px 18px; border-radius: 18px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); backdrop-filter: blur(6px); }
+.inicio-hero-estado-titulo { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(220, 228, 245, .55); margin-bottom: 14px; }
+.inicio-hero-estado ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.inicio-hero-estado li { display: flex; gap: 12px; align-items: flex-start; }
+    .inicio-hero-estado li b { display: block; font-size: .88rem; font-weight: 600; color: #fff; }
+    .inicio-hero-estado li small { display: block; font-size: .78rem; color: rgba(220, 228, 245, .65); }
+    .inicio-hero-estado li small a { color: inherit; text-decoration: underline; text-decoration-color: rgba(220, 228, 245, .3); }
+    .inicio-hero-estado .punto { flex: 0 0 9px; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 4px rgba(148, 163, 184, .15); }
+    .inicio-hero-estado li.ok .punto { background: #4aa3e8; box-shadow: 0 0 0 4px rgba(74, 163, 232, .18); }
+    .inicio-hero-estado li.mal .punto { background: #f87171; box-shadow: 0 0 0 4px rgba(248, 113, 113, .2); }
+.inicio-hero-servidor { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .08); font-size: .72rem; color: rgba(220, 228, 245, .45); word-break: break-all; }
+:root[data-theme="dark"] .inicio-hero { background: radial-gradient(90% 120% at 100% 0%, rgba(224, 122, 142, .18) 0%, rgba(224, 122, 142, 0) 50%), #0f2347; border: 1px solid rgba(255, 255, 255, .06); }
+@media (max-width: 1199.98px) {
+    .inicio-hero { grid-template-columns: 1fr; }
+    .inicio-hero-cifras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inicio-hero-cifras > *:nth-child(3) { padding-left: 0; border-left: 0; }
+}
+@media (max-width: 575.98px) { .inicio-hero { padding: 24px 20px; } .inicio-hero-cifras strong { font-size: 1.8rem; } }
+/* Como en Sincronizacion: el titulo va sin icono y la descripcion alineada con el titulo. */
+.encabezado h3 > i:first-child { display: none !important; }
+.encabezado-titulo > div > h3:has(> i:first-child) + p { padding-left: 0 !important; }

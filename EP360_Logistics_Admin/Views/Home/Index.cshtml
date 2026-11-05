@@ -4,28 +4,67 @@
     var e = Model.Estado;
     var sync = Model.UltimaSincronizacion;
     string saludo = DateTime.Now.Hour < 12 ? "Buenos días" : DateTime.Now.Hour < 19 ? "Buenas tardes" : "Buenas noches";
+    var cultura = new System.Globalization.CultureInfo("es-MX");
+    string fechaLarga = DateTime.Now.ToString("dddd d 'de' MMMM 'de' yyyy", cultura);
+    fechaLarga = char.ToUpper(fechaLarga[0]) + fechaLarga.Substring(1);
+
+    // Estado de cada pieza para el panel derecho del encabezado.
+    bool replicaConfigurada = EP360_Logistics_Admin.DAL.Infraestructura.Replicador.Configurada;
+    string alertaReplica = replicaConfigurada ? EP360_Logistics_Admin.Helpers.AlertaReplicacion.Texto() : null;
+    bool syncBien = sync != null && sync.Estado == "Terminada";
+    string syncTexto = sync == null ? "Nunca se ha corrido"
+        : (sync.FechaInicio.Date == DateTime.Today ? "Hoy " : sync.FechaInicio.Date == DateTime.Today.AddDays(-1) ? "Ayer " : sync.FechaInicio.ToString("dd/MM ")) + sync.FechaInicio.ToString("HH:mm")
+          + " · " + (sync.Estado == "Terminada" ? "sin errores" : sync.Estado == "ConErrores" ? "con errores" : sync.Estado.ToLower());
+    string nombresPortales = string.Join(", ", e.Portales.Select(x => x.Nombre.Split('(')[0].Trim()));
+    int unidadesFlota = Model.CajasActivas + Model.TractoresActivos;
 }
 
-<section class="hero-ep">
-    <i class="fas fa-globe-americas hero-decoracion" aria-hidden="true"></i>
-    <h2>@saludo@(string.IsNullOrWhiteSpace((string)ViewBag.NombreSaludo) ? "" : ", " + (string)ViewBag.NombreSaludo)</h2>
-    <p>Directorio global y flota compartidos por los portales de EP Logistics: personas, clientes, cajas, transportistas, tractores y choferes en un solo lugar.</p>
-    <div class="hero-meta">
+<section class="inicio-hero">
+    <div class="inicio-hero-principal">
+        <span class="inicio-hero-marca">EP<b>360</b> · Logistics <span>Directorio global</span></span>
+        <h1>@saludo@(string.IsNullOrWhiteSpace((string)ViewBag.NombreSaludo) ? "" : ", " + (string)ViewBag.NombreSaludo)</h1>
+        <div class="inicio-hero-fecha">@fechaLarga</div>
+        <p>
+            La fuente única de personas, clientes y flota de EP Logistics. Todo lo que se registra aquí lo consultan
+            @(e.Conectado && e.Portales.Count > 0 ? nombresPortales : "los portales de la empresa"): un solo directorio,
+            sincronizado con Active Directory y con copia en el servidor 11.
+        </p>
         @if (e.Conectado)
         {
-            <span><i class="fas fa-circle" style="color:#4aa3e8;font-size:.55rem;"></i> Base en línea · @e.BaseDatos</span>
-            <span><i class="fas fa-server"></i> @e.Servidor</span>
-            <span><i class="fas fa-plug"></i> @e.PortalesActivos portales conectados</span>
-        }
-        else
-        {
-            <span><i class="fas fa-circle" style="color:rgba(255,255,255,.45);font-size:.55rem;"></i> Sin conexión con la base</span>
-        }
-        @if (sync != null)
-        {
-            <span><i class="fas fa-rotate"></i> Última sincronización AD: @sync.FechaInicio.ToString("dd/MM/yyyy HH:mm")</span>
+            <div class="inicio-hero-cifras">
+                <a href="@Url.Action("Index", "Personas")"><strong>@Model.PersonasActivas.ToString("N0")</strong><span>personas activas</span><small>@Model.UsuariosAD.ToString("N0") del dominio · @Model.UsuariosExternos.ToString("N0") externas</small></a>
+                <a href="@Url.Action("Index", "Cuentas")"><strong>@Model.CuentasActivas.ToString("N0")</strong><span>cuentas de clientes</span><small>en @Model.GruposActivos.ToString("N0") grupos</small></a>
+                <a href="@Url.Action("Index", "Cajas")"><strong>@unidadesFlota.ToString("N0")</strong><span>unidades de flota</span><small>@Model.CajasActivas.ToString("N0") cajas · @Model.TractoresActivos.ToString("N0") tractores</small></a>
+                <div><strong>@e.PortalesActivos</strong><span>portales conectados</span><small>leen este directorio</small></div>
+            </div>
         }
     </div>
+
+    <aside class="inicio-hero-estado" aria-label="Estado del sistema">
+        <div class="inicio-hero-estado-titulo">Estado del sistema</div>
+        <ul>
+            <li class="@(e.Conectado ? "ok" : "mal")">
+                <span class="punto"></span>
+                <div><b>Base de datos</b><small>@(e.Conectado ? e.BaseDatos + " · en línea" : "Sin conexión")</small></div>
+            </li>
+            <li class="@(sync == null ? "neutro" : syncBien ? "ok" : "mal")">
+                <span class="punto"></span>
+                <div><b>Active Directory</b><small><a href="@Url.Action("Index", "Sincronizacion")">@syncTexto</a></small></div>
+            </li>
+            <li class="@(!replicaConfigurada ? "neutro" : alertaReplica == null ? "ok" : "mal")">
+                <span class="punto"></span>
+                <div><b>Copia en el servidor 11</b><small>@(!replicaConfigurada ? "No configurada en este servidor" : alertaReplica == null ? "Al día" : alertaReplica)</small></div>
+            </li>
+            <li class="@(e.Conectado && e.PortalesActivos > 0 ? "ok" : "neutro")">
+                <span class="punto"></span>
+                <div><b>Portales</b><small>@(e.Conectado ? string.Join(" · ", e.Portales.Select(x => x.Clave)) : "—")</small></div>
+            </li>
+        </ul>
+        @if (e.Conectado)
+        {
+            <div class="inicio-hero-servidor">@e.Servidor · hora del servidor @e.FechaServidor.ToString("HH:mm")</div>
+        }
+    </aside>
 </section>
 
 @if (!e.Conectado)
