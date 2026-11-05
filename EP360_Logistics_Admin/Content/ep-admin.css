@@ -1532,3 +1532,35 @@ a.footer-version-pill:hover { color: var(--color-brand-claro); }
 /* Como en Sincronizacion: el titulo va sin icono y la descripcion alineada con el titulo. */
 .encabezado h3 > i:first-child { display: none !important; }
 .encabezado-titulo > div > h3:has(> i:first-child) + p { padding-left: 0 !important; }
+
+/* ==========================================================================
+   Colores mas sobrios (pedido 2026-11-05: "se me hacen muy chillantes, opacalos o negrealos").
+   Pastillas, pestanas, iconos de indicadores y avatares pasan a tonos apagados cercanos al navy y al pizarra.
+   El rojo se queda solo para lo critico (errores). Modo oscuro conserva sus propios tonos.
+   ========================================================================== */
+:root:not([data-theme="dark"]) .pastilla-verde  { color: #2c4a63; background: #e9eef3; border-color: #d6dee7; }
+:root:not([data-theme="dark"]) .pastilla-azul   { color: #1e3a5f; background: #e7ecf3; border-color: #d3dce8; }
+:root:not([data-theme="dark"]) .pastilla-navy   { color: #0b1b3d; background: #e8ebf1; border-color: #d4d9e3; }
+:root:not([data-theme="dark"]) .pastilla-ambar  { color: #5e4b2e; background: #f0ece4; border-color: #e2dbcd; }
+:root:not([data-theme="dark"]) .pastilla-morado { color: #3d3a5c; background: #ebeaf1; border-color: #d9d7e5; }
+:root:not([data-theme="dark"]) .pastilla-gris   { color: #555b66; background: #eef0f3; border-color: #dfe2e7; }
+:root:not([data-theme="dark"]) .pastilla-rojo   { color: #8a2c2c; background: #f5e7e7; border-color: #ebd2d2; }
+.pastilla-verde i, .pastilla-azul i, .pastilla-ambar i, .pastilla-morado i, .pastilla-gris i, .pastilla-navy i { opacity: .7; }
+
+/* Pestanas de estado: todas en navy, sin verde/azul/ambar/morado. */
+.listado-pestana[class*="color-"].activo { color: var(--color-principal-oscuro); border-bottom-color: var(--color-principal-oscuro); }
+.listado-pestana[class*="color-"].activo b { background: var(--color-principal-oscuro); color: #fff; }
+.listado-pestana i { opacity: .55; }
+:root[data-theme="dark"] .listado-pestana[class*="color-"].activo { color: var(--acento-oscuro); border-bottom-color: var(--acento-oscuro); }
+:root[data-theme="dark"] .listado-pestana[class*="color-"].activo b { background: var(--acento-oscuro); color: #0b1b3d; }
+
+/* Iconos de indicadores: el color de cada uno, pero apagado hacia el pizarra. */
+:root:not([data-theme="dark"]) .kpi-tile-icono { color: color-mix(in srgb, var(--kpi-color, #0b1b3d) 45%, #3b4658); background: color-mix(in srgb, var(--kpi-color, #0b1b3d) 6%, #eef0f4); }
+
+/* Avatares: tonos profundos en lugar de saturados. */
+:root:not([data-theme="dark"]) .avatar-ep.av-azul   { background: #2c4a73; }
+:root:not([data-theme="dark"]) .avatar-ep.av-verde  { background: #34556b; }
+:root:not([data-theme="dark"]) .avatar-ep.av-ambar  { background: #6b5636; }
+:root:not([data-theme="dark"]) .avatar-ep.av-morado { background: #45436b; }
+:root:not([data-theme="dark"]) .avatar-ep.av-gris   { background: #5b6372; }
+:root:not([data-theme="dark"]) .avatar-ep.av-rojo   { background: #7a2e2e; }
