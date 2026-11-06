@@ -55,6 +55,16 @@ ON destino.rutaCompartida = origen.rutaCompartida
 WHEN NOT MATCHED THEN INSERT (nombre, rutaCompartida) VALUES (origen.nombre, origen.rutaCompartida);
 GO
 
+-- Asignacion inicial (2026-11-06, indicada por kevina): las cuatro EPL1 son de MIGUEL DE LA MADRID; las demas quedan SIN sucursal
+-- (solo las ve el administrador) hasta que se indique. Solo toca las que siguen sin sucursal, asi no pisa cambios hechos en la app.
+UPDATE i SET idSucursal = s.idSucursal
+FROM dir.ImpresoraCompartida i
+JOIN dir.Sucursal s ON s.nombre COLLATE Latin1_General_CI_AI = N'MIGUEL DE LA MADRID'
+WHERE i.idSucursal IS NULL
+  AND i.rutaCompartida IN (N'\\192.168.50.4\EPL1-OFFICE PRINTER', N'\\192.168.50.4\EPL1-WH PRINTER',
+                           N'\\192.168.50.4\EPL1- TRAFFIC PRINTER', N'\\192.168.50.4\EPL1-RH PRINTER');
+GO
+
 CREATE OR ALTER PROCEDURE dir.sp_ObtenerImpresoras
     @incluirInactivas BIT = 1
 AS
