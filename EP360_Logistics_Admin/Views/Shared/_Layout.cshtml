@@ -21,7 +21,7 @@
 @{
     var controlador = (string)ViewContext.RouteData.Values["controller"];
     var accion = (string)ViewContext.RouteData.Values["action"];
-    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos", "Sucursales" };
+    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos", "Sucursales", "Impresoras" };
     var areaFlota = new[] { "Cajas", "Transportistas", "Tractores", "Choferes" };
     Func<string, string> activo = c => controlador == c ? "activo" : "";
     string area = areaDirectorio.Contains(controlador) ? "Directorio" : areaFlota.Contains(controlador) ? "Flota" : (controlador == "Sincronizacion" || controlador == "Replicacion") ? "Sistema" : null;
@@ -97,6 +97,7 @@
                     <a class="@activo("Grupos")" href="@Url.Action("Index", "Grupos")"><i class="fas fa-layer-group"></i> Grupos de cuentas</a>
                     <a class="@activo("Accesos")" href="@Url.Action("Index", "Accesos")"><i class="fas fa-key"></i> Accesos a portales</a>
                     <a class="@activo("Sucursales")" href="@Url.Action("Index", "Sucursales")"><i class="fas fa-location-dot"></i> Sucursales</a>
+                    <a class="@activo("Impresoras")" href="@Url.Action("Index", "Impresoras")"><i class="fas fa-print"></i> Impresoras</a>
             </div>
             <div class="grupo-nav">
                 <span class="grupo-etiqueta">Flota</span>

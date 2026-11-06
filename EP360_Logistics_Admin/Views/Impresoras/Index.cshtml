@@ -1,0 +1,111 @@
+﻿@model EP360_Logistics_Admin.Models.Paginado<EP360_Logistics_Admin.Models.ImpresoraAdminModel>
+@{
+    ViewBag.Title = "Impresoras";
+    var enc = (EncabezadoListado)ViewBag.Encabezado;
+    string volver = Request.RawUrl;
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index", "Home")" class="btn-atras" title="Volver al inicio" aria-label="Volver al inicio"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-print"></i>Impresoras</h3>
+            <p>Impresoras compartidas de documentos (servidor de impresión 192.168.50.4). Se dan de alta aquí una sola vez; cada portal elige cuáles ocupa.</p>
+        </div>
+    </div>
+    <div class="encabezado-acciones">
+        <a class="btn-corporativo" href="@Url.Action("Crear")"><i class="fas fa-plus"></i> Nueva impresora</a>
+    </div>
+</div>
+
+<div class="listado-filtros">
+    @Html.Partial("_PestanasListado", enc)
+    <form method="get" action="@Url.Action("Index")" class="listado-controles filtros-auto">
+        <input type="hidden" name="estado" value="@enc.PestanaActiva" />
+        <input type="hidden" name="tam" value="@Model.TamPagina" />
+        <div class="listado-buscar">
+            <i class="fas fa-magnifying-glass"></i>
+            <input type="search" name="buscar" value="@ViewBag.Buscar" autocomplete="off" placeholder="Buscar por nombre o ruta..." @(string.IsNullOrEmpty((string)ViewBag.Buscar) ? "" : "autofocus") />
+        </div>
+    </form>
+    @Html.Partial("_ChipsListado", enc)
+</div>
+
+@if (Model.Total == 0)
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="vacio-ep">
+            <div class="vacio-icono"><i class="fas fa-print"></i></div>
+            <h6>No hay impresoras con esos filtros</h6>
+            <p>Prueba con otra búsqueda o agrega una impresora nueva.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="tarjeta-tabla-ep">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="tabla-ep">
+                <thead>
+                    <tr>
+                        @Html.ColumnaOrden("Impresora", "nombre")
+                        @Html.ColumnaOrden("Ruta compartida", "ruta")
+                        @Html.ColumnaOrden("Sucursal", "sucursal")
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model.Items)
+                    {
+                        <tr class="@(i.Activo ? "" : "inactiva")">
+                            <td>
+                                <div class="celda-principal">
+                                    <span class="avatar-ep cuadrado @(i.Activo ? "" : "av-gris")"><i class="fas fa-print"></i></span>
+                                    <div style="min-width:0;"><span class="nombre">@i.Nombre</span></div>
+                                </div>
+                            </td>
+                            <td>@i.RutaCompartida</td>
+                            <td>@(i.Sucursal ?? "—")</td>
+                            <td>
+                                @if (i.Activo)
+                                {
+                                    <span class="pastilla pastilla-verde"><i class="fas fa-circle"></i>Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="pastilla pastilla-gris"><i class="fas fa-circle-pause"></i>Inactiva</span>
+                                }
+                            </td>
+                            <td class="celda-acciones">
+                                <div class="dropdown">
+                                    <button type="button" class="btn-icono" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acciones"><i class="fas fa-ellipsis-vertical"></i></button>
+                                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-ep compacto">
+                                        <a class="dropdown-item" href="@Url.Action("Editar", new { id = i.IdImpresora })"><i class="fas fa-pen"></i> Editar</a>
+                                        <div class="dropdown-divider"></div>
+                                        @using (Html.BeginForm(i.Activo ? "Desactivar" : "Reactivar", "Impresoras", new { id = i.IdImpresora }, FormMethod.Post, new
+                                        {
+                                            data_confirmar = i.Activo ? "¿Desactivar la impresora " + i.Nombre + "?" : "¿Reactivar la impresora " + i.Nombre + "?",
+                                            data_confirmar_detalle = i.Activo ? "Deja de ofrecerse en todos los portales (handheld y portal de EP360)." : "Vuelve a ofrecerse como opción.",
+                                            data_confirmar_tipo = i.Activo ? "peligro" : "normal",
+                                            data_confirmar_boton = i.Activo ? "Sí, desactivar" : "Sí, reactivar"
+                                        }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@volver" />
+                                            <button type="submit" class="dropdown-item @(i.Activo ? "texto-peligro" : "")">
+                                                <i class="fas @(i.Activo ? "fa-ban" : "fa-rotate-left")"></i> @(i.Activo ? "Desactivar" : "Reactivar")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@Html.Partial("_Paginacion", (IPaginado)Model)
