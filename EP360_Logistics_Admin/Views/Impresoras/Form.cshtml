@@ -1,0 +1,46 @@
+﻿@model EP360_Logistics_Admin.Models.ImpresoraAdminModel
+@{
+    bool esNueva = Model.IdImpresora == 0;
+    ViewBag.Title = esNueva ? "Nueva impresora" : "Editar impresora";
+}
+
+<div class="encabezado">
+    <div class="encabezado-titulo">
+        <a href="@Url.Action("Index")" class="btn-atras" title="Volver" aria-label="Volver"><i class="fas fa-arrow-left"></i></a>
+        <div>
+            <h3><i class="fas fa-print"></i>@ViewBag.Title</h3>
+            <p>Cada portal decide si la ocupa. EP360 Traceability la usa para imprimir discrepancias e inspecciones.</p>
+        </div>
+    </div>
+</div>
+
+<div class="form-ep" style="max-width:640px;">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.IdImpresora)
+        <div class="form-ep-cuerpo">
+            @Html.ValidationSummary(true)
+            <div class="form-seccion">
+                <div class="form-seccion-titulo"><span class="form-paso">1</span> Datos de la impresora</div>
+                @Html.LabelFor(m => m.Nombre)
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", autofocus = "autofocus", placeholder = "Ej. EPL1-WH PRINTER" })
+                @Html.ValidationMessageFor(m => m.Nombre, null, new { @class = "error-campo" })
+                <span class="ayuda-campo">Cómo se mostrará en las pantallas y en la handheld.</span>
+
+                @Html.LabelFor(m => m.RutaCompartida)
+                @Html.TextBoxFor(m => m.RutaCompartida, new { @class = "form-control", placeholder = @"\\192.168.50.4\EPL1-WH PRINTER" })
+                @Html.ValidationMessageFor(m => m.RutaCompartida, null, new { @class = "error-campo" })
+                <span class="ayuda-campo">Ruta de la impresora compartida del servidor de impresión. No se puede repetir.</span>
+
+                @Html.LabelFor(m => m.IdSucursal)
+                @Html.DropDownListFor(m => m.IdSucursal, (IEnumerable<SelectListItem>)ViewBag.Sucursales, "(sin sucursal)", new { @class = "form-select" })
+                <span class="ayuda-campo">Opcional. Indica a qué sucursal pertenece la impresora.</span>
+            </div>
+        </div>
+        <div class="form-ep-pie">
+            <a class="btn-suave" href="@Url.Action("Index")">Cancelar</a>
+            <button type="submit" class="btn-corporativo"><i class="fas fa-floppy-disk"></i> Guardar</button>
+        </div>
+    }
+</div>
