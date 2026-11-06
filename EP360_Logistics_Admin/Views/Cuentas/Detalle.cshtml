@@ -1,6 +1,7 @@
 ﻿@model EP360_Logistics_Admin.Models.CuentaModel
 @{
     ViewBag.Title = Model.NombreComercial;
+    ViewBag.TituloPestana = Model.NombreComercial + " · Cuenta";
     var personas = (List<PersonaCuentaModel>)ViewBag.Personas;
     var vinculables = (IEnumerable<SelectListItem>)ViewBag.Vinculables;
     var cajas = (List<CajaModel>)ViewBag.Cajas;

@@ -1,7 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
@@ -60,25 +59,46 @@ namespace EP360_Logistics_Admin.Helpers
             return desc ? lista.OrderByDescending(clave) : lista.OrderBy(clave);
         }
 
-        // CSV en UTF-8 con BOM para que Excel abra bien los acentos; todos los valores van entre comillas.
-        public static FileContentResult Csv<T>(string nombreArchivo, IEnumerable<T> filas, params (string Titulo, Func<T, object> Valor)[] columnas)
+        // Excel con el formato de los reportes de Traceability (ver ExcelEP360Helper). Recibe lo mismo que recibia el CSV:
+        // nombre de archivo, filas ya filtradas y columnas (titulo, valor). Las fechas y numeros viajan con su tipo real.
+        // Si hay una columna "Activo/Activa" (bool) se usa para las tarjetas y se pinta como estado; las columnas de catalogo
+        // (Tipo, Departamento, Sucursal, Grupo, Transportista) dan las tablas de conteo del resumen.
+        public static FileContentResult Exportar<T>(string nombreArchivo, IEnumerable<T> filas, params (string Titulo, Func<T, object> Valor)[] columnas)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine(string.Join(",", columnas.Select(c => Citar(c.Titulo))));
-            foreach (var f in filas)
-                sb.AppendLine(string.Join(",", columnas.Select(c => Citar(Formato(c.Valor(f))))));
-            var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
-            return new FileContentResult(bytes, "text/csv") { FileDownloadName = nombreArchivo + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".csv" };
-        }
+            var lista = filas.ToList();
+            var encabezados = columnas.Select(c => c.Titulo).ToList();
+            var datos = lista.Select(f => columnas.Select(c => c.Valor(f)).ToArray()).ToList();
+            string titulo = char.ToUpper(nombreArchivo[0]) + nombreArchivo.Substring(1);
 
-        private static string Formato(object v)
-        {
-            if (v == null) return "";
-            if (v is DateTime) return ((DateTime)v).ToString("yyyy-MM-dd");
-            if (v is bool) return (bool)v ? "Sí" : "No";
-            return Convert.ToString(v);
-        }
+            int iActivo = encabezados.FindIndex(t => t.StartsWith("Activ", StringComparison.OrdinalIgnoreCase));
+            var tarjetas = new List<ExcelEP360Helper.Tarjeta> { new ExcelEP360Helper.Tarjeta { Etiqueta = "Registros", Valor = datos.Count, Nota = "con los filtros de la pantalla" } };
+            if (iActivo >= 0)
+            {
+                int activos = datos.Count(d => d[iActivo] is bool && (bool)d[iActivo]);
+                tarjetas.Add(new ExcelEP360Helper.Tarjeta { Etiqueta = "Activos", Valor = activos, Color = "azul" });
+                tarjetas.Add(new ExcelEP360Helper.Tarjeta { Etiqueta = "Inactivos", Valor = datos.Count - activos, Color = "gris" });
+            }
 
-        private static string Citar(string s) { return "\"" + (s ?? "").Replace("\"", "\"\"") + "\""; }
+            var tablas = new List<ExcelEP360Helper.TablaConteo>();
+            foreach (string catalogo in new[] { "Tipo", "Departamento", "Sucursal", "Grupo", "Transportista" })
+            {
+                int i = encabezados.FindIndex(t => t.Equals(catalogo, StringComparison.OrdinalIgnoreCase));
+                if (i < 0 || tablas.Count == 3) continue;
+                tablas.Add(new ExcelEP360Helper.TablaConteo
+                {
+                    Titulo = "Por " + catalogo.ToLower(),
+                    Renglones = datos.GroupBy(d => Convert.ToString(d[i]) is string v && v != "" ? v : "(sin dato)")
+                                     .Select(g => new KeyValuePair<string, int>(g.Key, g.Count()))
+                                     .OrderByDescending(k => k.Value).Take(15).ToList()
+                });
+            }
+
+            byte[] bytes = ExcelEP360Helper.Generar(titulo, "Generado el " + DateTime.Now.ToString("dd/MM/yyyy HH:mm"), tarjetas, tablas,
+                encabezados, datos, iActivo, d => d[iActivo] is bool ? ((bool)d[iActivo] ? "azul" : "gris") : null);
+            return new FileContentResult(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            {
+                FileDownloadName = nombreArchivo + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + ".xlsx"
+            };
+        }
     }
 }

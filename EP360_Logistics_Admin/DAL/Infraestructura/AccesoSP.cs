@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -108,6 +108,10 @@ namespace EP360_Logistics_Admin.DAL.Infraestructura
         public static int Entero(this IDataRecord r, string columna)
         {
             return Convert.ToInt32(r.GetValue(r.GetOrdinal(columna)));
+        }
+        public static long EnteroLargo(this IDataRecord r, string columna)
+        {
+            return Convert.ToInt64(r.GetValue(r.GetOrdinal(columna)));
         }
         public static int? EnteroNulo(this IDataRecord r, string columna)
         {

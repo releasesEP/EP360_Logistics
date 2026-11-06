@@ -20,7 +20,7 @@
             </label>
             @if (exportar)
             {
-                <a class="btn-suave btn-sm-ep" href="@Url.ConFiltros(new { formato = "csv", pagina = (int?)null })" title="Descarga todo lo filtrado, no solo esta página"><i class="fas fa-file-csv"></i> Exportar CSV</a>
+                <a class="btn-suave btn-sm-ep" href="@Url.ConFiltros(new { formato = "xlsx", pagina = (int?)null })" title="Descarga todo lo filtrado, no solo esta página"><i class="fas fa-file-excel"></i> Exportar Excel</a>
             }
         </div>
         @if (total > 1)

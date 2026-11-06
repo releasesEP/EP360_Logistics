@@ -46,8 +46,8 @@ namespace EP360_Logistics_Admin.Controllers
                     { "transportistas", c => c.ListaTransportistas.Count }
                 }).ToList();
 
-            if (formato == "csv")
-                return ListadoHelpers.Csv("choferes", resultado,
+            if (formato == "xlsx" || formato == "csv")
+                return ListadoHelpers.Exportar("choferes", resultado,
                     ("Nombre", c => c.NombreCompleto), ("Licencia", c => c.Licencia), ("Teléfono", c => c.Telefono),
                     ("Transportistas", c => c.Transportistas), ("Activo", c => c.Activo));
 

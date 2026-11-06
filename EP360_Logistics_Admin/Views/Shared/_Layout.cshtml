@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - EP360 Logistics</title>
+    @* Como EP360 Traceability (2026-11-05): "Pagina · EP360 Logistics"; los detalles mandan ViewBag.TituloPestana con lo que
+       distingue una pestana de otra primero ("Adrian Anaya · Persona", "#15 · Sincronización AD"). *@
+    <title>@(ViewBag.TituloPestana as string ?? ViewBag.Title + " · EP360 Logistics")</title>
     <script>
         // Anti-parpadeo de modo oscuro: aplica el tema guardado ANTES de pintar.
         (function () {
@@ -14,12 +16,12 @@
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/bootstrap/bootstrap.min.css")" />
     <link rel="stylesheet" href="@Url.Content("~/Content/lib/fontawesome/css/all.min.css")" />
     <link rel="stylesheet" href="@Url.Content("~/Content/header-footer.css?v=2")" />
-    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=15")" />
+    <link rel="stylesheet" href="@Url.Content("~/Content/ep-admin.css?v=23")" />
 </head>
 @{
     var controlador = (string)ViewContext.RouteData.Values["controller"];
     var accion = (string)ViewContext.RouteData.Values["action"];
-    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos", "Sucursales" };
+    var areaDirectorio = new[] { "Personas", "Cuentas", "Grupos", "Accesos", "Sucursales", "Impresoras" };
     var areaFlota = new[] { "Cajas", "Transportistas", "Tractores", "Choferes" };
     Func<string, string> activo = c => controlador == c ? "activo" : "";
     string area = areaDirectorio.Contains(controlador) ? "Directorio" : areaFlota.Contains(controlador) ? "Flota" : (controlador == "Sincronizacion" || controlador == "Replicacion") ? "Sistema" : null;
@@ -95,6 +97,7 @@
                     <a class="@activo("Grupos")" href="@Url.Action("Index", "Grupos")"><i class="fas fa-layer-group"></i> Grupos de cuentas</a>
                     <a class="@activo("Accesos")" href="@Url.Action("Index", "Accesos")"><i class="fas fa-key"></i> Accesos a portales</a>
                     <a class="@activo("Sucursales")" href="@Url.Action("Index", "Sucursales")"><i class="fas fa-location-dot"></i> Sucursales</a>
+                    <a class="@activo("Impresoras")" href="@Url.Action("Index", "Impresoras")"><i class="fas fa-print"></i> Impresoras</a>
             </div>
             <div class="grupo-nav">
                 <span class="grupo-etiqueta">Flota</span>

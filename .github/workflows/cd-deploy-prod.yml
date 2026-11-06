@@ -103,6 +103,22 @@ jobs:
             Set-Content -Path $conn -Value $xml -Encoding UTF8
             Write-Output "Creado ConnectionStrings.config (primer deploy)."
           }
+          # Replica en el 11 (Replicador): si el archivo del servidor no trae CadenaSQLReplica la app escribe
+          # solo en el 60 y ni siquiera encola, y el 11 (que lee EP360Balance) se queda atrasado. Se agrega
+          # una sola vez; si ya existe no se toca.
+          $doc = New-Object System.Xml.XmlDocument
+          $doc.Load($conn)
+          if (-not $doc.SelectSingleNode("/connectionStrings/add[@name='CadenaSQLReplica']")) {
+            $nodo = $doc.CreateElement("add")
+            $nodo.SetAttribute("name", "CadenaSQLReplica")
+            $nodo.SetAttribute("connectionString", "Data Source=192.168.50.11;Initial Catalog=EP360_Logistics;Integrated Security=True;TrustServerCertificate=True")
+            $nodo.SetAttribute("providerName", "System.Data.SqlClient")
+            [void]$doc.DocumentElement.AppendChild($nodo)
+            $doc.Save($conn)
+            Write-Output "Agregada CadenaSQLReplica (192.168.50.11) a ConnectionStrings.config."
+          } else {
+            Write-Output "CadenaSQLReplica ya estaba configurada."
+          }
           $app = Join-Path $sitio "AppSettings.config"
           if (-not (Test-Path $app)) {
             $xml = '<?xml version="1.0" encoding="utf-8"?>' + "`r`n" +
