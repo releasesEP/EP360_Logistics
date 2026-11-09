@@ -72,7 +72,8 @@
                 </div>
                 <div class="col-md-3">
                     @Html.LabelFor(m => m.Extension)
-                    @Html.TextBoxFor(m => m.Extension, new { @class = "form-control" })
+                    @Html.TextBoxFor(m => m.Extension, solo)
+                    @if (soloLectura) { <span class="ayuda-campo d-block mt-1">Viene de Active Directory (campo ipPhone); se corrige allí.</span> }
                 </div>
                 @if (soloLectura)
                 {
