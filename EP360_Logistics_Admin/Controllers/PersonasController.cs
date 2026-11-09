@@ -173,6 +173,7 @@ namespace EP360_Logistics_Admin.Controllers
                 modelo.Puesto = original.Puesto;
                 modelo.IdDepartamento = original.IdDepartamento;
                 modelo.IdSucursal = original.IdSucursal;
+                modelo.Extension = original.Extension;   // sale solo de AD (ipPhone): la sincronizacion de la madrugada la reescribe
                 ModelState.Remove("NombreCompleto");
                 ModelState.Remove("Correo");
             }

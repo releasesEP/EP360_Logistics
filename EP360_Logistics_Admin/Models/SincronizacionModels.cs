@@ -15,6 +15,8 @@ namespace EP360_Logistics_Admin.Models
         public string Puesto { get; set; }
         public string Compania { get; set; }
         public string Jefe { get; set; }
+        // Atributo ipPhone de AD: la extension de un usuario de AD sale solo de ahi (2026-11-09).
+        public string Extension { get; set; }
         public bool Habilitado { get; set; }
     }
 
