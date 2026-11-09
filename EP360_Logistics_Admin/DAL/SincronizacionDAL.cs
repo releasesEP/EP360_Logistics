@@ -31,7 +31,7 @@ namespace EP360_Logistics_Admin.DAL
                 P("@userPrincipalName", u.UserPrincipalName), P("@correoAD", u.Correo), P("@puesto", u.Puesto),
                 P("@departamento", u.Departamento), P("@sucursal", u.Sucursal),
                 P("@habilitadoAD", u.Habilitado), P("@cumpleReglas", cumpleReglas),
-                P("@idSincronizacion", idSincronizacion), P("@motivo", motivo));
+                P("@idSincronizacion", idSincronizacion), P("@motivo", motivo), P("@extension", u.Extension));
             return resultado == null ? null : resultado.Accion;
         }
 

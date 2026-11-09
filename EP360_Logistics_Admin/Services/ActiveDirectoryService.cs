@@ -91,6 +91,7 @@ namespace EP360_Logistics_Admin.Services
                                 Puesto = LeerPropiedad(entrada, "title"),
                                 Compania = LeerPropiedad(entrada, "company"),
                                 Jefe = LeerPropiedad(entrada, "manager"),
+                                Extension = LeerPropiedad(entrada, "ipPhone"),
                                 Habilitado = usuario.Enabled != false
                             });
                         }
